@@ -467,7 +467,7 @@ static int ls_i2c_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg msgs[],
 	for (i = 0; i < num && !ret; i++)
 		ret = ls_i2c_xfer_msg(i2c_dev, &msgs[i], i == num - 1);
 
-	if(ret<0){
+ 	if(ret<0){
 		dev_err(i2c_dev->dev,"i2c transfer err,ret is %d\n",ret);
 		writel(0x8000,i2c_dev->base + I2C_CR1);
 		msleep(5);

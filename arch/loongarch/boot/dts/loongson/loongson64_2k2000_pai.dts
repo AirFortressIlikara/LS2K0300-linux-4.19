@@ -321,12 +321,24 @@
 			  reg = <0 0x1fe001f0 0 0x10>;
 			  spidev@0{
 			      compatible = "jedec,spi-nor";
-			      spi-max-frequency = <40000000>;
-			      reg = <0>;
+			      spi-max-frequency = <20000000>;
+			      reg = <1>;
+			      #address-cells = <2>;
+			      #size-cells = <2>;
+			      number-of-parts = <0x2>;
+			      partition@0x0{
+				  label = "kernel";
+				  reg = <0 0x100000 0x0 0x1100000>;
+			      };
+			      partition@0x1{
+				  label = "rootfs";
+				  reg = <0 0x1100000 0x0 0x0>;
+			      };
+
 			  };
 			  spi_dev@1{
 			      compatible = "jedec,spi-nor";
-			      spi-max-frequency = <40000000>;
+			      spi-max-frequency = <20000000>;
 			      #address-cells = <2>;
 			      #size-cells = <2>;
 			      reg = <1>;
@@ -599,16 +611,15 @@
 			interrupts = <51 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "ls2k_mci_irq";
 			clock-frequency = <0 100000000>;
-			max-frequency = <30000000>;
 			bus-width = <8>;
-			cap-mmc-highspeed;
+			mmc-hs200-1_8v;
 			no-sd;
 			no-sdio;
 			dma-mask = <0xffffffff 0xffffffff>;
 		};
 		sdio0@0x79991000 {
 			#address-cells = <2>;
-		       compatible = "loongson,ls2k_sdio_1.1";
+		       compatible = "loongson,ls2k_sdio_1.2";
 			reg = <0 0x79991000 0 0x1000>;
 			//cd-gpio = <&pioB 2 0>;    //Just open for cd line with irq,don't open poll mode
 			interrupt-parent = <&platic>;
@@ -742,11 +753,23 @@
 			 compatible = "syscon";
 			 reg = <0x0 0x100d0000 0x0 0x58>;
 		};
-		reboot {
-		    	compatible ="syscon-reboot-2k2000";
+		watchdog_en {
+		    	compatible ="syscon-reboot";
 			regmap = <&pmc>;
 			offset = <0x30>;
-			mask = <0x4>;
+			mask = <0x2>;
+		};
+		watchdog_timer {
+		    compatible ="syscon-reboot";
+		    regmap = <&pmc>;
+		    offset = <0x38>;
+		    mask = <0x10>;
+		};
+		watchdog_set {
+		    compatible ="syscon-reboot";
+		    regmap = <&pmc>;
+		    offset = <0x34>;
+		    mask = <0x1>;
 		};
 		poweroff {
 		    	compatible ="syscon-poweroff";

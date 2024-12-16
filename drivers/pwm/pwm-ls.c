@@ -178,16 +178,16 @@ static const struct pwm_ops ls_pwm_ops = {
 	.get_state = ls_pwm_get_state,
 	.owner = THIS_MODULE,
 };
-static irqreturn_t pwm_ls2x_isr(int irq, void *dev){
+static irqreturn_t pwm_ls2x_isr(int irq, void *dev)
+{
     int ret;
     struct ls_pwm_chip *ls_pwm = (struct ls_pwm_chip *)dev;
-
     ret = readl(ls_pwm->mmio_base + CTRL);
     ret |= CTRL_INT;
+
     writel(ret, ls_pwm->mmio_base + CTRL);
 
     return IRQ_HANDLED;
-
 }
 
 static int ls_pwm_probe(struct platform_device *pdev)
@@ -234,9 +234,14 @@ static int ls_pwm_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 	pwm->irq = irq;
+	
+	if(pdev->dev.of_node && of_device_is_compatible(pdev->dev.of_node, "loongson,ls300-pwm")){
+        err = request_irq(pwm->irq, pwm_ls2x_isr, IRQF_SHARED, "pwm_interrupts", pwm);                                                                                                                  
+	}else{
+        err = request_irq(pwm->irq, pwm_ls2x_isr, IRQF_TRIGGER_FALLING, "pwm_interrupts", pwm);
+	}
 
-	err = request_irq(pwm->irq, pwm_ls2x_isr, IRQF_TRIGGER_FALLING, "pwm_interrupts", pwm);
-	if (err < 0)
+	if (err)
 	    dev_err(&pdev->dev, "failure requesting irq %d\n", err);
 
 	err = pwmchip_add(&pwm->chip);
@@ -269,6 +274,7 @@ static struct of_device_id ls_pwm_id_table[] = {
 	{.compatible = "loongson,ls7a-pwm"},
 	{.compatible = "loongson,ls-pwm"},
 	{.compatible = "loongson,ls2k-pwm"},
+	{.compatible = "loongson,ls300-pwm"},
 	{},
 };
 MODULE_DEVICE_TABLE(of, ls_pwm_id_table);
@@ -323,4 +329,4 @@ module_platform_driver(ls_pwm_driver);
 MODULE_AUTHOR("Juxin Gao <gaojuxin@loongson.com>");
 MODULE_DESCRIPTION("Loongson Pwm Driver");
 MODULE_LICENSE("GPL");
-MODULE_ALIAS("platform:ls-pwm");
+

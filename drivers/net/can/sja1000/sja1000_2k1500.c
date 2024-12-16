@@ -699,8 +699,8 @@ static u8 can_ls2k1500_read_reg8(const struct sja1000_priv *priv, int reg)
 			if (lp->last_tx) {
 				unsigned long flags;
 
-				lp->last_tx = lp->last_tx + 1 ?: 1;
 				spin_lock_irqsave(&priv->cmdreg_lock, flags);
+				lp->last_tx = lp->last_tx + 1 ?: 1;
 				if (get_cycles() & 1)
 					iowrite8(0x80 | CMD_AT, priv->reg_base + SJA1000_CMR);
 				iowrite8(0x80 | CMD_TR, priv->reg_base + SJA1000_CMR);

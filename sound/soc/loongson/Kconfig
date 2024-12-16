@@ -3,7 +3,10 @@ menuconfig SND_SOC_LOONGSON
 
 if SND_SOC_LOONGSON
 
-config SND_LS_I2S
+config SND_SOC_LOONGSON_ES8323
+	tristate "SoC I2S Audio support for ES8323 on LOONGSON"
+
+config SND_LS
 	tristate "SoC Audio for ls-i2s"
 	help
 	  Say Y or M if you want to add support for codecs attached to
@@ -11,16 +14,16 @@ config SND_LS_I2S
 		interfaces to support below.
 
 config SND_LS_PCM
-	tristate "SoC Audio for ls-pcm"
+	tristate "SoC Audio for ls-pcm used descriptor"
 	help
-	Say Y or M if you want to add support for codecs attached to
-	the PCM interface. You will also need to select the Audio
-		interfaces to support below.
+	  Say Y or M if you want to add support for codecs attached to
+	  the PCM interface. Select this by configuring the dma of the descriptor.
 
-config SND_LS_SOUND
-	tristate "SoC Audio for ls-sound"
+config SND_LS_PCM_GENERIC_DMA
+	tristate "SoC Audio for ls-pcm used generic dma"
+	help
+	  Say Y or M if you want to add support for codecs attached to
+	  the PCM interface. Select this by configuring the generic dma.
 
-config SND_LS_2K300
-	bool "SoC Audio for ls-2k300"
-	default n
+
 endif #SND_SOC_LOONGSON

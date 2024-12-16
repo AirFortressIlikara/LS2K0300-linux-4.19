@@ -67,38 +67,7 @@ static const struct snd_pcm_hardware ls_pcm_hardware = {
 	.buffer_bytes_max	= 1024 * 1024,
 };
 static unsigned int revision_id;
-#ifdef CONFIG_SND_LS_2K300
-int __ls_pcm_hw_params(struct snd_pcm_substream *substream,
-				struct snd_pcm_hw_params *params)
-{
-	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct ls_runtime_data *rtd = runtime->private_data;
-	size_t totsize = params_buffer_bytes(params);
-	size_t period = params_period_bytes(params);
-	dma_addr_t dma_buff_phys;
-	void *order_addr;
-	snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
-	order_addr = (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) ?  rtd->order_addr1 : rtd->order_addr2;
-	rtd->totsize = totsize;
-	runtime->dma_bytes = totsize;
-	dma_buff_phys = runtime->dma_addr;
-	rtd->period = period;
-	rtd->dma_offsize = 0;
-	rtd->dma_start_phys = dma_buff_phys;
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		writel(0xa92, order_addr);
-	} else {
-		writel(0xa82, order_addr);
-	}
-
-	writel(period / 4, order_addr + 0x4);
-	writel(rtd->params->dev_addr, order_addr + 0x8);
-	writel((u32)dma_buff_phys, order_addr + 0xc);
-	return 0;
-}
-
-#else
 int __ls_pcm_hw_params(struct snd_pcm_substream *substream,
 				struct snd_pcm_hw_params *params)
 {
@@ -141,7 +110,6 @@ int __ls_pcm_hw_params(struct snd_pcm_substream *substream,
 
 	return 0;
 }
-#endif
 EXPORT_SYMBOL(__ls_pcm_hw_params);
 
 int __ls_pcm_hw_free(struct snd_pcm_substream *substream)
@@ -150,62 +118,7 @@ int __ls_pcm_hw_free(struct snd_pcm_substream *substream)
 	return 0;
 }
 EXPORT_SYMBOL(__ls_pcm_hw_free);
-#ifdef CONFIG_SND_LS_2K300
-int ls_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
-{
-	struct ls_runtime_data *prtd = substream->runtime->private_data;
-	struct device *dev = substream->pcm->card->dev;
-	int ret = 0;
-	void *order_addr;
-	uint32_t data;
 
-	order_addr = (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) ?  prtd->order_addr1 : prtd->order_addr2;
-
-	switch (cmd) {
-	case SNDRV_PCM_TRIGGER_START:
-
-		writel(readl(order_addr) | 0x1, order_addr);
-		udelay(5);
-		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-			data = readl(i2s_ctl);
-			data &= ~(0x1 << 12);
-			writel(data, i2s_ctl);
-			data = readl(i2s_ctl);
-			data |= 0xc010 | (1 << 7) | (1 << 12);
-			writel(data, i2s_ctl);
-		} else {
-		    data = readl(i2s_ctl);
-		    data |= 0xc010 | (1 << 11) | (1 << 13);
-		    writel(data, i2s_ctl);			
-		}
-
-		break;
-
-	case SNDRV_PCM_TRIGGER_STOP:
-		writel(readl(order_addr) & (~0x1), order_addr);
-		udelay(1000);
-		break;
-
-	case SNDRV_PCM_TRIGGER_SUSPEND:
-	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
-		writel(readl(order_addr) & (~0x1), order_addr);
-		break;
-
-	case SNDRV_PCM_TRIGGER_RESUME:
-		break;
-	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
-		writel(readl(order_addr) | 0x1, order_addr);
-		udelay(1000);		
-		break;
-
-	default:
-		ret = -EINVAL;
-	}
-
-	return ret;
-}
-
-#else
 int ls_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 {
 	struct ls_runtime_data *prtd = substream->runtime->private_data;
@@ -308,31 +221,8 @@ int ls_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 
 	return ret;
 }
-#endif
 EXPORT_SYMBOL(ls_pcm_trigger);
-#ifdef CONFIG_SND_LS_2K300
-snd_pcm_uframes_t
-ls_pcm_pointer(struct snd_pcm_substream *substream)
-{
-	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct ls_runtime_data *prtd = runtime->private_data;
-	struct device *dev = substream->pcm->card->dev;
 
-	snd_pcm_uframes_t x;
-	u64 addr, remaining;
-	void *order_addr;
-
-	order_addr = (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) ?  prtd->order_addr1 : prtd->order_addr2;
-	remaining = readl(order_addr + 0x4);
- 	addr = (prtd->period / 4 - remaining) * 4; 
-	addr = prtd->dma_offsize + addr;
-	x = bytes_to_frames(runtime, addr);	
-	if (x == runtime->buffer_size)
-		x = 0;
-	return x;
-}
-
-#else
 snd_pcm_uframes_t
 ls_pcm_pointer(struct snd_pcm_substream *substream)
 {
@@ -367,7 +257,6 @@ ls_pcm_pointer(struct snd_pcm_substream *substream)
 		x = 0;
 	return x;
 }
-#endif
 EXPORT_SYMBOL(ls_pcm_pointer);
 
 int __ls_pcm_prepare(struct snd_pcm_substream *substream)
@@ -380,32 +269,7 @@ int __ls_pcm_prepare(struct snd_pcm_substream *substream)
 	return 0;
 }
 EXPORT_SYMBOL(__ls_pcm_prepare);
-#ifdef CONFIG_SND_LS_2K300
-irqreturn_t ls_pcm_dma_irq(int irq, void *dev_id)
-{
-	struct snd_pcm_substream *substream = dev_id;
-	struct ls_runtime_data *prtd = substream->runtime->private_data;
-	u32 dma_chan;
-	void *order_addr;
- 
-	order_addr = (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) ?  prtd->order_addr1 : prtd->order_addr2;
 
-	dma_chan = (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) ?  prtd->dma_play_chan : prtd->dma_record_chan;
-
-    writel(readl(order_addr) & (~0x1), order_addr);
-	writel((0xf << (dma_chan * 4)), prtd->dma_base + 4);
-
-	prtd->dma_offsize += prtd->period;
-    if ((prtd->dma_offsize) >= (prtd->totsize))
-    	prtd->dma_offsize = 0;
-
-    snd_pcm_period_elapsed(substream);
-
-    writel((u32)(prtd->dma_start_phys + prtd->dma_offsize), order_addr + 0xc);
-    writel(readl(order_addr) | 0x1, order_addr);
- 	return IRQ_HANDLED;
-}
-#else
 irqreturn_t ls_pcm_dma_irq(int irq, void *dev_id)
 {
 	struct snd_pcm_substream *substream = dev_id;
@@ -413,93 +277,8 @@ irqreturn_t ls_pcm_dma_irq(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
-#endif
 EXPORT_SYMBOL(ls_pcm_dma_irq);
-#ifdef CONFIG_SND_LS_2K300
-int __ls_pcm_open(struct snd_pcm_substream *substream)
-{
-	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct ls_runtime_data *prtd;
-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	int ret;
-	int irq;
 
-	runtime->hw = ls_pcm_hardware;
-
-	if (substream->pcm->device & 1) {
-		runtime->hw.info &= ~SNDRV_PCM_INFO_INTERLEAVED;
-		runtime->hw.info |= SNDRV_PCM_INFO_NONINTERLEAVED;
-	}
-	if (substream->pcm->device & 2)
-		runtime->hw.info &= ~(SNDRV_PCM_INFO_MMAP |
-				      SNDRV_PCM_INFO_MMAP_VALID);
-	/*
-	 * For mysterious reasons (and despite what the manual says)
-	 * playback samples are lost if the DMA count is not a multiple
-	 * of the DMA burst size.  Let's add a rule to enforce that.
-	 */
-	ret = snd_pcm_hw_constraint_step(runtime, 0,
-		SNDRV_PCM_HW_PARAM_PERIOD_BYTES, 128);
-	if (ret)
-		goto out;
-
-	ret = snd_pcm_hw_constraint_step(runtime, 0,
-		SNDRV_PCM_HW_PARAM_BUFFER_BYTES, 128);
-	if (ret)
-		goto out;
-
-	ret = snd_pcm_hw_constraint_integer(runtime,
-					    SNDRV_PCM_HW_PARAM_PERIODS);
-	if (ret < 0)
-		goto out;
-
-	ret = -ENOMEM;
-	prtd = kzalloc(sizeof(*prtd), GFP_KERNEL);
-	if (!prtd)
-		goto out;
-	runtime->private_data = prtd;
-
-	prtd->base_phys = g_prtd.base_phys;
-	prtd->base = g_prtd.base;
-	prtd->dma_base_phys = g_prtd.dma_base_phys;
-	prtd->dma_base = g_prtd.dma_base;
-
-	prtd->dma_play_chan = g_prtd.dma_play_chan;
-	prtd->dma_record_chan = g_prtd.dma_record_chan;
-
-	prtd->order_addr1_phys = g_prtd.order_addr1_phys;
-	prtd->order_addr1 = g_prtd.order_addr1;
-
-	prtd->order_addr2_phys = g_prtd.order_addr2_phys;
-	prtd->order_addr2 = g_prtd.order_addr2;
-
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		irq = platform_get_irq(plat_dev, 0);
-		ret = request_irq(irq, ls_pcm_dma_irq, IRQF_TRIGGER_RISING,
-				"dma-write", substream);
-		if (ret < 0) {
-			printk("%s request_irq failed. ret=0x%x\r\n", __func__, ret);
-			return ret;
-		}
-	} else {
-		irq = platform_get_irq(plat_dev, 1);
-		ret = request_irq(irq, ls_pcm_dma_irq, IRQF_TRIGGER_RISING,
-				"dma-read", substream);
-		if (ret < 0) {
-			printk("%s request_irq failed. ret=0x%x\r\n", __func__, ret);
-			return ret;
-		}
-	}
-
-	return 0;
-
- err1:
-	kfree(rtd);
- out:
-	return ret;
-}
-
-#else
 int __ls_pcm_open(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -595,28 +374,8 @@ int __ls_pcm_open(struct snd_pcm_substream *substream)
  out:
 	return ret;
 }
-#endif
 EXPORT_SYMBOL(__ls_pcm_open);
-#ifdef CONFIG_SND_LS_2K300
-int __ls_pcm_close(struct snd_pcm_substream *substream)
-{
-	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct ls_runtime_data *prtd = runtime->private_data;
-	int irq;
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		irq = platform_get_irq(plat_dev, 0);
-		free_irq(irq, substream);
-	} else {
-		irq = platform_get_irq(plat_dev, 1);
-		free_irq(irq, substream);
-	}
-
-	kfree(prtd);
-	return 0;
-}
-
-#else
 int __ls_pcm_close(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -636,7 +395,6 @@ int __ls_pcm_close(struct snd_pcm_substream *substream)
 	kfree(prtd);
 	return 0;
 }
-#endif
 EXPORT_SYMBOL(__ls_pcm_close);
 
 static int ls_pcm_mmap(struct snd_pcm_substream *substream,
@@ -775,56 +533,7 @@ static int ls_snd_soc_register_component(struct platform_device *pdev)
 
 	return snd_soc_register_component(&pdev->dev, &ls_soc_platform, NULL, 0);
 }
-#ifdef CONFIG_SND_LS_2K300
-static int ls_soc_probe(struct platform_device *pdev)
-{
-	int ret = 0;
-	resource_size_t base;
-	resource_size_t dma_1;
-	resource_size_t dma_2;
-	int timeout = 20000;
-	struct dma_chan *chan;
-	__be32 *of_property = NULL;
-	struct resource *r;
-	u32 chan_p, chan_r;
 
-	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (r == NULL) {
-		dev_err(&pdev->dev, "no IO memory resource defined\n");
-		ret = -ENODEV;
-	}
-	g_prtd.base_phys = r->start;
-	g_prtd.base = (uint64_t *)ioremap(r->start, 0x10);
-	i2s_ctl = g_prtd.base + 0x8;
-	device_property_read_u64(&pdev->dev, "dma-base", &base);
-	device_property_read_u32(&pdev->dev, "play-chan", &chan_p);
-	device_property_read_u32(&pdev->dev, "record-chan", &chan_r);
-	if ((chan_p < 8) && (chan_r < 8)) {
-		dma_1 = base + 0x8 + chan_p * 0x14;
-		dma_2 = base + 0x8 + chan_r * 0x14;
-	} else { 	
-		dev_err(&pdev->dev, "DMA channel out of range!\n");
-		ret = -ENODEV;
-	}
-	g_prtd.dma_base_phys = base;
-	g_prtd.dma_base = (uint64_t *)ioremap(base, 0x8);
-	g_prtd.dma_play_chan = chan_p;
-	g_prtd.dma_record_chan = chan_r;
-	g_prtd.order_addr1_phys = dma_1;
-	g_prtd.order_addr1 = (uint64_t *)ioremap(dma_1, 0x20);
-	g_prtd.order_addr2_phys = dma_2;
-	g_prtd.order_addr2 = (uint64_t *)ioremap(dma_2, 0x20);
-
-	writel(0x8, i2s_ctl);
-	while ((!(readl(i2s_ctl) & 0x10000)) && timeout--)
-		udelay(5);
-	writel(0x8008, i2s_ctl);
-	while ((!(readl(i2s_ctl) & 0x100)) && timeout--)
-		udelay(5);
-	return ls_snd_soc_register_component(pdev);
-}
-
-#else
 static int ls_soc_probe(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -911,9 +620,10 @@ static int ls_soc_probe(struct platform_device *pdev)
 		while ((!(readl(i2s_ctl) & 0x100)) && timeout--)
 			udelay(5);
 	}
+
 	return ls_snd_soc_register_component(pdev);
 }
-#endif
+
 static int ls_soc_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);

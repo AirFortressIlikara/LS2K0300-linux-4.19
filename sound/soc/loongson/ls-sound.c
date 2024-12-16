@@ -38,6 +38,9 @@ static int loongson_hw_params(struct snd_pcm_substream *substream,
 #else/*original*/
 	return 0;
 #endif
+
+	return 0;
+
 }
 
 static struct snd_soc_ops loongson_ops = {
@@ -50,7 +53,6 @@ static int loongson_es8388_init_paiftx(struct snd_soc_pcm_runtime *rtd)
 	 * resistor to connect the line from the microphone jack.
 	 */
 	snd_soc_dapm_disable_pin(&rtd->card->dapm, "MicIn");
-
 	return 0;
 }
 
@@ -68,23 +70,21 @@ enum {
 static struct snd_soc_dai_link loongson_dai[] = {
 	[PRI_PLAYBACK] = {
 		/* Primary Playback i/f */
-		.name = "dummy",
+		.name = "ES8388 PAIF RX",
 		.stream_name = "Playback",
 		.cpu_dai_name = "loongson-i2s-dai",
-		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_dai_name = "ES8323 HiFi",
 		.platform_name = "loongson-i2s",
-		.codec_name = "snd-soc-dummy",  /*dtc codec_name*/
 		.dai_fmt = LOONGSON_DAI_FMT,
 		.ops = &loongson_ops,
 	},
 	[PRI_CAPTURE] = {
 		/* Primary Capture i/f */
-		.name = "dummy",
+		.name = "ES8388 PAIF TX",
 		.stream_name = "Capture",
 		.cpu_dai_name = "loongson-i2s-dai",
-		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_dai_name = "ES8323 HiFi",
 		.platform_name = "loongson-i2s",
-		.codec_name = "snd-soc-dummy",  /*dtc codec_name*/
 		.dai_fmt = LOONGSON_DAI_FMT,
 		.init = loongson_es8388_init_paiftx,
 		.ops = &loongson_ops,
@@ -132,6 +132,7 @@ static int ls_sound_drv_probe(struct platform_device *pdev)
 	    of_property_read_string_index(np, "codec-names", 6, &loongson_dai[1].codec_dai_name);
 	    of_property_read_string_index(np, "codec-names", 7, &loongson_dai[1].codec_name);
 	}
+
 	ret = platform_device_add(loongson_snd_device);
 
 	if (ret)

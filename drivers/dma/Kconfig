@@ -206,6 +206,14 @@ config LS_APBDMAC
 	help
 	  Support the Loongson APB DMA controller.
 
+config LSIA_DMA
+        tristate "Loongson LSIA DMA support"
+        depends on LOONGARCH
+        select DMA_ENGINE
+        select DMA_VIRTUAL_CHANNELS
+        help
+          Support the Loongson LSIA DMA controller.
+
 config FSL_DMA
 	tristate "Freescale Elo series DMA support"
 	depends on FSL_SOC

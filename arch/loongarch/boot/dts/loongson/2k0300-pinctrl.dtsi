@@ -96,7 +96,11 @@
 			loongson,pinmux = <&gpa4 0 0>;
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
 		};
-		pwm0_mux_m1: pwm0-mux-m1{	 			/* pwm0 have two multiplex methods */
+		pwm0_mux_m1: pwm0-mux-m1{	 			/* pwm0 have three multiplex methods */
+			loongson,pinmux = <&gpa5 6 6>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		pwm0_mux_m2: pwm0-mux-m2{	 			/* pwm0 have three multiplex methods */
 			loongson,pinmux = <&gpa6 6 6>;
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
 		};
@@ -106,7 +110,11 @@
 			loongson,pinmux = <&gpa4 1 1>;
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
 		};
-		pwm1_mux_m1: pwm1-mux-m1{ 				/* pwm1 have two multiplex methods */
+		pwm1_mux_m1: pwm1-mux-m1{ 				/* pwm1 have three multiplex methods */
+			loongson,pinmux = <&gpa5 7 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		pwm1_mux_m2: pwm1-mux-m2{	 			/* pwm1 have three multiplex methods */
 			loongson,pinmux = <&gpa6 7 7>;
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
 		};
@@ -117,7 +125,11 @@
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
 		};
 		pwm2_mux_m1: pwm2-mux-m1{
-			loongson,pinmux = <&gpa6 8 8>;              	/* pwm2 have two multiplex methods */
+			loongson,pinmux = <&gpa5 8 8>;              	/* pwm2 have three multiplex methods */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		pwm2_mux_m2: pwm2-mux-m2{	 			/* pwm2 have three multiplex methods */
+			loongson,pinmux = <&gpa6 8 8>;
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
 		};
 	};
@@ -127,7 +139,11 @@
 			loongson,pinmux = <&gpa4 3 3>;
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
 		};
-		pwm3_mux_m1: pwm3-mux-m1{				/* pwm3 have two multiplex methods */
+		pwm3_mux_m1: pwm3-mux-m1{				/* pwm3 have three multiplex methods */
+			loongson,pinmux = <&gpa5 9 9>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		pwm3_mux_m2: pwm3-mux-m2{	 			/* pwm3 have three multiplex methods */
 			loongson,pinmux = <&gpa6 9 9>;
 			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
 		};

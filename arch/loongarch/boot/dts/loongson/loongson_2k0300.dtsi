@@ -284,29 +284,45 @@
 		};
 
 #endif
+		dma0: dma@0x1612c000 {
+			compatible = "loongson,lsia-dma";
+			reg = <0 0x1612c000 0 0xff>;
+			interrupt-parent = <&icu>;
+			interrupts = <23>,
+				     <24>,
+				     <25>,
+				     <26>,
+				     <27>,
+				     <28>,
+				     <29>,
+				     <30>;
+			#dma-cells = <2>;
+		};
+
 		can0: can@0x16110000 {
 			compatible = "ls,lscan";
 			status = "disabled";
 			reg = <0 0x16110000 0 0x400>;
 			ls,clock-frequency = <100000000>;
+			ls,canfd-dmarx;
 			#interrupt-cells = <2>;
 			interrupt-parent = <&icu>;
 			interrupts = <8>;
-
-	//		dmas = <&dma0 0 0 0xaae 0x2>;
-	//		dma-names = "rx";
+			dmas = <&dma0 0 0xaae>;
+			dma-names = "rx";
 		};
 		can1: can@0x16110400 {
 			compatible = "ls,lscan";
 			status = "disabled";
 			reg = <0 0x16110400 0 0x400>;
 			ls,clock-frequency = <100000000>;
+			ls,canfd-dmarx;
 			#interrupt-cells = <2>;
 			interrupt-parent = <&icu>;
 			interrupts = <9>;
 
-	//		dmas = <&dma0 1 1 0xaae 0x2>;
-	//		dma-names = "rx";
+			dmas = <&dma0 1 0xaae>;
+			dma-names = "rx";
 		};
 
 		can2: can@0x16110800 {
@@ -314,12 +330,13 @@
 			status = "disabled";
 			reg = <0 0x16110800 0 0x400>;
 			ls,clock-frequency = <100000000>;
+			ls,canfd-dmarx;
 			#interrupt-cells = <2>;
 			interrupt-parent = <&icu>;
 			interrupts = <10>;
 
-	//		dmas = <&dma0 2 2 0xaae 0x2>;
-	//		dma-names = "rx";
+			dmas = <&dma0 2 0xaae>;
+			dma-names = "rx";
 		};
 
 		can3: can@0x16110c00 {
@@ -327,12 +344,13 @@
 			status = "disabled";
 			reg = <0 0x16110c00 0 0x400>;
 			ls,clock-frequency = <100000000>;
+			ls,canfd-dmarx;
 			#interrupt-cells = <2>;
 			interrupt-parent = <&icu>;
 			interrupts = <11>;
+			dmas = <&dma0 3 0xaae>;
+			dma-names = "rx";
 
-	//		dmas = <&dma0 3 3 0xaae 0x2>;/*argc0:dma chan id;argc1:dma sel;argc2 dma chan cfg;argc3:*/
-	//		dma-names = "rx";
 		};
 
 
@@ -472,22 +490,18 @@
 		};
 #if 1
 		i2s: i2s@0x16114000 {
-				status = "disabled";
-                compatible = "loongson,ls-i2s";
-                reg = <0 0x16114000 0 0x10>;
-                clock-frequency = <100000000>;
+			status = "disabled";
+			compatible = "loongson,ls2k0300-i2s";
+                	reg = <0 0x16114000 0 0x10>;
+                	clock-frequency = <100000000>;
         };
         audio: audio@0x16114000 {
-                compatible = "loongson,ls-pcm-audio";
+                //compatible = "loongson,ls-pcm-audio";
+                compatible = "loongson,ls-pcm-generic-audio";
                 reg = <0 0x16114000 0 0x10>;
-                interrupt-parent = <&icu>;
-                interrupts = <24 23>;
-                interrupt-names = "i2s_irq0", "i2s_irq1";
-				dma-base = <0 0x1612c000>;
-				play-chan = <1>;
-				record-chan = <0>;
-	            dma-names = "i2s_play", "i2s_record";
-                dma-mask = <0xffffffff 0xffffffff>;
+		dmas = <&dma0 5 0xa92>,
+			<&dma0 4 0xa82>;
+		dma-names = "i2s_play", "i2s_record";
         };
 		sound: sound{
                 compatible = "loongson,ls-sound";
@@ -526,7 +540,50 @@
 			};
 		};
 
+		pwm0: pwm@1611b000{
+			  compatible = "loongson,ls300-pwm";
+			  reg = <0 0x1611b000 0 0x10>;
+			  clock-frequency = <100000000>;
+			  interrupt-parent = <&icu>;
+			  interrupts = <16>;
+			  #pwm-cells = <2>;
+			  
+			  status = "disabled";
+		};
+		
+		pwm1: pwm@1611b010{
+			  compatible = "loongson,ls300-pwm";
+			  reg = <0 0x1611b010 0 0x10>;
+			  clock-frequency = <100000000>;
+			  interrupt-parent = <&icu>;
+			  interrupts = <16>;
+			  #pwm-cells = <2>;
 
+			  status = "disabled";
+		};
+		
+		pwm2: pwm@1611b020{
+			  compatible = "loongson,ls300-pwm";
+			  reg = <0 0x1611b020 0 0x10>;
+			  clock-frequency = <100000000>;
+			  interrupt-parent = <&icu>;
+			  interrupts = <17>;
+			  #pwm-cells = <2>;
+
+			  status = "disabled";
+		};
+		
+		pwm3: pwm@1611b030{
+			  compatible = "loongson,ls300-pwm";
+			  reg = <0 0x1611b030 0 0x10>;
+			  clock-frequency = <100000000>;
+			  interrupt-parent = <&icu>;
+			  interrupts = <17>;
+			  #pwm-cells = <2>;
+
+			  status = "disabled";
+		};
+		
 		pmc: syscon@0x100d0000 {
                         compatible = "syscon";
                         reg = <0x0 0x16124000 0x0 0x8>;

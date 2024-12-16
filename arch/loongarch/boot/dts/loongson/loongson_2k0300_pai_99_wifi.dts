@@ -153,7 +153,18 @@
     pinctrl-names = "default";
     pinctrl-0 = <&spi2_pin>;
 };
-#if 0
+
+&pwm0{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pwm0_mux_m1>;
+};
+&pwm1{
+    status = "disabled";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pwm1_mux_m0>;
+};
+
 &pwm2{
     status = "okay";
     pinctrl-names = "default";
@@ -164,7 +175,7 @@
     pinctrl-names = "default";
     pinctrl-0 = <&pwm3_mux_m1>;
 };
-#endif
+
 &i2s{
     status = "okay";
     pinctrl-names = "default";

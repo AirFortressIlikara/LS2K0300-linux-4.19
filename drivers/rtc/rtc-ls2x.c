@@ -96,9 +96,9 @@ static u32 ver = 0;
 
 /* ACPI and RTC offset */
 #ifdef CONFIG_CPU_LOONGSON2K
-#define ACPI_RTC_OFFSET		0x0//0x800
+#define ACPI_RTC_OFFSET		0x800//0x0
 #else
-#define ACPI_RTC_OFFSET		0x0//0x100
+#define ACPI_RTC_OFFSET		0x100//0x0
 #endif
 
 /* support rtc wakeup */
@@ -259,7 +259,6 @@ static int ls2x_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 	unsigned long flags;
 	unsigned int alrm_en;
 	struct rtc_time *tm = &alrm->time;
-
 	rtc_pm_regmap_read(regmap, PM1_STS_FOR_RTC, &alrm_en);
 	alrm_en &= RTC_STS_WAKEUP_BIT;
 
@@ -296,12 +295,10 @@ static int ls2x_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 	val |= (tm->tm_mday << TOY_MATCH_DAY_SHIFT);
 	val |= ((tm->tm_mon + 1) << TOY_MATCH_MON_SHIFT);
 	val |= ((tm->tm_year & TOY_MATCH_YEAR_MASK) << TOY_MATCH_YEAR_SHIFT);
-
 	retry = 10;
 	do {
 		rtc_write(val, TOY_MATCH0_REG);
 	} while (rtc_read(TOY_MATCH0_REG) != val && !!(retry--));
-
 	if (!retry) {
 		spin_unlock_irqrestore(&rtc_lock, flags);
 		return -EIO;

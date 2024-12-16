@@ -60,7 +60,7 @@ static int ls_i2s_hw_params(struct snd_pcm_substream *substream,
 	unsigned int bclk_ratio;
 	unsigned int wlen = 16;
 	unsigned int depth = 16;
-	unsigned int fs = 48000;
+	unsigned int fs = 44100;
 	unsigned int xfs = 256;
 	unsigned long long int mclk_ratio;
 	unsigned long long int mclk_ratio_frac;
@@ -71,6 +71,7 @@ static int ls_i2s_hw_params(struct snd_pcm_substream *substream,
 	bclk_ratio = DIV_ROUND_CLOSEST(fs * xfs, (depth * 2 * fs * 2)) - 1;
 	mclk_ratio = clk_rate / (xfs * fs);
 	mclk_ratio_frac = DIV_ROUND_CLOSEST((u64)clk_rate * 65536, (u64)fs * (u64)xfs) - mclk_ratio * 65536;
+
 	clk_ena = 1;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
@@ -196,6 +197,7 @@ static int ls_i2s_drv_probe(struct platform_device *pdev)
 {
 	uint64_t IISRxData, IISTxData;
 	struct pci_dev *pci_dev;
+
 	if (ACPI_COMPANION(&pdev->dev) || (pci_dev = pci_get_device(PCI_VENDOR_ID_LOONGSON, PCI_DEVICE_ID_LOONGSON_I2S, NULL))) {
 		resource_size_t mmio_base, mmio_size;
 		struct pci_dev *ppdev;
@@ -217,6 +219,7 @@ static int ls_i2s_drv_probe(struct platform_device *pdev)
 		IISRxData = (uint64_t)pci_i2s_reg | IISRXADDR;
 		IISTxData = (uint64_t)pci_i2s_reg | IISTXADDR;
 	} else {
+		struct device_node *np = pdev->dev.of_node;
 		struct resource *r;
 		r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
@@ -228,12 +231,13 @@ static int ls_i2s_drv_probe(struct platform_device *pdev)
 		pdev->dev.platform_data = ioremap_nocache(r->start, r->end - r->start + 1);;
 		IISRxData = r->start | IISRXADDR;
 		IISTxData = r->start | IISTXADDR;
-#ifdef CONFIG_SND_LS_2K300
-		if (r->start == LS2K0300_I2S_BASE)
-			revision_id = 1;
-#endif
 
+		if (of_device_is_compatible(np, "loongson,ls2k0300-i2s")){
+			*(volatile uint32_t *)0x8000000016000138 |= (0x2<<16);
+			revision_id = 1;
+		}
 	}
+
 	device_property_read_u32(&pdev->dev, "clock-frequency", &clk_rate);
 	pdev->dev.kobj.name = "loongson-i2s-dai";
 
@@ -242,6 +246,7 @@ static int ls_i2s_drv_probe(struct platform_device *pdev)
 
 	ls_i2s_pcm_stereo_in.name = PCM_STEREO_IN_NAME;
 	ls_i2s_pcm_stereo_in.dev_addr = IISRxData;
+
 	return snd_soc_register_component(&pdev->dev, &psc_i2s_component,
 	psc_i2s_dai, 1);
 }
@@ -255,6 +260,7 @@ static int ls_i2s_drv_remove(struct platform_device *pdev)
 
 static const struct of_device_id snd_ls_i2s_dt_match[] = {
     { .compatible = "loongson,ls-i2s", },
+    { .compatible = "loongson,ls2k0300-i2s", },
     { .compatible = "loongson,loongson2-i2s", },
     { .compatible = "loongson,ls7a-i2s", },
     {},
@@ -265,7 +271,7 @@ static struct platform_driver ls_i2s_driver = {
 	.probe = ls_i2s_drv_probe,
 	.remove = ls_i2s_drv_remove,
 	.driver = {
-		.name = "loongson-i2s",
+		.name = "loongson-i2sp",
 		.owner = THIS_MODULE,
 		.of_match_table = of_match_ptr(snd_ls_i2s_dt_match),
 	},

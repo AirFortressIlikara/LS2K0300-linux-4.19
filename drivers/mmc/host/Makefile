@@ -100,5 +100,3 @@ endif
 
 obj-$(CONFIG_MMC_SDHCI_XENON)	+= sdhci-xenon-driver.o
 sdhci-xenon-driver-y		+= sdhci-xenon.o sdhci-xenon-phy.o
-drivers/mmc/host/ls2kmci.o:
-	cp drivers/mmc/host/ls2kmci.elf drivers/mmc/host/ls2kmci.o

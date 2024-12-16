@@ -96,12 +96,13 @@
     pinctrl-names = "default";
     pinctrl-0 = <&sdio0_pin_f0>, <&sdio0_pin_f1>;
 };
+#if 0
 &sdio1{
     status = "okay"; 
     pinctrl-names = "default"; 
     pinctrl-0 = <&sdio1_6bit>, <&sdio1_10bit_m1>;
 };
-
+#endif
 &i2c0{
 	status = "okay"; 
     clock-frequency = <400000>;
@@ -170,27 +171,29 @@
     pinctrl-0 = <&spi3_pin>;
 };
 #endif
-#if 0
 &pwm0{
 	status = "okay"; 
     pinctrl-names = "default"; 
-    pinctrl-0 = <&pwm0_mux_m0>;
+    pinctrl-0 = <&pwm0_mux_m1>;
 };
+
 &pwm1{
 	status = "okay"; 
     pinctrl-names = "default"; 
-    pinctrl-0 = <&pwm1_mux_m0>;
+    pinctrl-0 = <&pwm1_mux_m1>;
 };
+
 &pwm2{
 	status = "okay"; 
     pinctrl-names = "default"; 
-    pinctrl-0 = <&pwm2_mux_m0>;
+    pinctrl-0 = <&pwm2_mux_m1>;
 };
+
 &pwm3{
 	status = "okay"; 
     pinctrl-names = "default"; 
-    pinctrl-0 = <&pwm3_mux_m0>;
+    pinctrl-0 = <&pwm3_mux_m1>;
 };
-#endif
+
 
 

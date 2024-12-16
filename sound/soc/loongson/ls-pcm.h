@@ -9,6 +9,8 @@
 #define _LS_PCM_H
 #include <asm/delay.h>
 
+#define DMA_MASK	0xffffffffffffffff
+
 typedef struct ls_dma_desc {
 	u32 ordered;
 	u32 saddr;
@@ -22,38 +24,11 @@ typedef struct ls_dma_desc {
 	u32 saddr_hi;
 	u32 dummy[6];
 } ls_dma_desc;
-#ifdef CONFIG_SND_LS_2K300
-struct ls_runtime_data {
-	u64 totsize;
-	u64 period;
-	u32 dma_play_chan;
-	u32 dma_record_chan;
-	struct ls_pcm_dma_params *params;
-	ls_dma_desc *dma_desc_array;
-	dma_addr_t dma_desc_array_phys;
 
-	ls_dma_desc *dma_desc_ready;
-	dma_addr_t dma_desc_ready_phys;
-
-	ls_dma_desc *dma_position_desc;
-	dma_addr_t dma_position_desc_phys;
-	dma_addr_t base_phys;
-	void	*base;
-	dma_addr_t dma_base_phys;
-	void* dma_base;
-	dma_addr_t order_addr1_phys;
-	void	*order_addr1;
-	dma_addr_t order_addr2_phys;
-	void	*order_addr2;
-    struct dma_chan         *chan;
-	dma_addr_t dma_start_phys;
-	u32 dma_offsize;
-
-};
-
-#else
 struct ls_runtime_data {
 	int dma_ch;
+	u64 totsize;
+	u64 i2s_ctl_base;
 	struct ls_pcm_dma_params *params;
 	ls_dma_desc *dma_desc_array;
 	dma_addr_t dma_desc_array_phys;
@@ -72,8 +47,14 @@ struct ls_runtime_data {
 	void	*order_addr2;
     struct dma_chan         *chan;
 
+	struct dma_chan *tx_ch;  /* dma rx channel            */
+	dma_addr_t tx_dma_buf;   /* dma rx buffer bus address */
+	unsigned int *tx_buf;   /* dma rx buffer cpu address */
+	struct dma_chan *rx_ch;  /* dma rx channel            */
+	dma_addr_t rx_dma_buf;   /* dma rx buffer bus address */
+	unsigned int *rx_buf;   /* dma rx buffer cpu address */
 };
-#endif
+
 struct ls_pcm_client {
 	struct ls_pcm_dma_params *playback_params;
 	struct ls_pcm_dma_params *capture_params;
@@ -94,8 +75,5 @@ static inline void write_reg(volatile u32 *reg, u32 val)
 {
 	*(reg) = (val);
 }
-#ifndef CONFIG_SND_LS_2K300
-void ls_ac97_write (struct snd_ac97 *ac97, unsigned short reg, unsigned short val);
-unsigned short ls_ac97_read (struct snd_ac97 *ac97, unsigned short reg);
-#endif
+
 #endif
