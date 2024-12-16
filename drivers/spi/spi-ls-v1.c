@@ -137,6 +137,7 @@ struct ls_spi{
 	u32			cur_bpw;
 	u32			cur_fthlv;
 	u32			cur_xferlen;
+	u32			cs_change;
 
 	const void		*tx_buf;
 	void			*rx_buf;
@@ -365,7 +366,8 @@ static void ls_spi_disable(struct ls_spi *spi)
 		ls_spi_read_fifo(spi, true);
 	}
 
-	spi_clr_bit(spi,SPI_CR1,SPI_CR1_SPE);
+	if(!spi->cs_change)
+		spi_clr_bit(spi,SPI_CR1,SPI_CR1_SPE);
 
 	/*Disable interrupt and clear status flags*/
 	spi_writel(spi,SPI_IER,0);
@@ -646,6 +648,7 @@ static int ls_spi_transfer_one(struct spi_master *master,struct spi_device *spi_
 	spi->rx_buf = transfer->rx_buf;
 	spi->tx_len =spi->tx_buf ? transfer->len : 0;
 	spi->rx_len =spi->rx_buf ? transfer->len : 0;
+	spi->cs_change = transfer->cs_change;
 
 	ret = ls_spi_transfer_one_setup(spi,spi_dev,transfer);
 	if(ret){
