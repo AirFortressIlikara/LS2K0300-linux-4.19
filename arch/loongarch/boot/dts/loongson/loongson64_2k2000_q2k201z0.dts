@@ -1,0 +1,800 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * loongson ls2k2000 Soc board device tree source
+ */
+
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/dts-v1/;
+/ {
+	model = "loongson,generic";
+	compatible = "loongson,ls2k2000";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial0 = &node_uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon";
+	};
+
+	memory {
+		name = "memory";
+		device_type = "memory";
+		reg =  <0 0x00200000 0 0x0ee00000
+			0 0x90000000 0 0x70000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x0 0x2000000>;
+			linux,cma-default;
+		};
+	};
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&cpu0>;
+				};
+				core1 {
+					cpu = <&cpu1>;
+				};
+			};
+		};
+
+
+		cpu0: cpu@1 {
+			device_type = "cpu";
+			compatible = "loongarch";
+			reg=<0>;
+			numa-node-id = <0>;
+		};
+		cpu1: cpu@2 {
+			device_type = "cpu";
+			compatible = "loongarch";
+			reg=<1>;
+			numa-node-id = <0>;
+		};
+	};
+
+	cpuic: interrupt-controller {
+		compatible = "loongson,cpu-interrupt-controller";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	iointc: interrupt-controller@1fe01400 {
+		compatible = "loongson,liointc-2.0";
+		reg = <0 0x1fe01400 0 0x40>,
+		      <0 0x1fe01440 0 0x8>,
+		      <0 0x1fe01448 0 0x8>;
+		reg-names = "main", "isr0", "isr1";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&cpuic>;
+		interrupts = <2>;
+		interrupt-names = "int0";
+
+		loongson,parent_int_map = <0xffffffff>, /* int0 */
+					<0x00000000>, /* int1 */
+					<0x00000000>, /* int2 */
+					<0x00000000>; /* int3 */
+	};
+
+	extioiic: interrupt-controller@0x1fe01600 {
+		compatible = "loongson,ls2k2000-eiointc";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&cpuic>;
+		interrupts = <3>;
+	};
+
+	platic: interrupt-controller@0x10000000 {
+		compatible = "loongson,pch-pic-1.0";
+		reg = <0x0 0x10000000 0x0 0x400>;
+		interrupt-controller;
+		interrupt-parent = <&extioiic>;
+		loongson,pic-base-vec = <0>;
+		#interrupt-cells = <2>;
+	};
+
+	msi: interrupt-controller@0x1fe01140 {
+		compatible = "loongson,pch-msi-1.0";
+		reg = <0 0x1fe01140 0 0x8>;
+		interrupt-controller;
+		loongson,msi-base-vec = <64>;
+		loongson,msi-num-vecs = <192>;
+		interrupt-parent = <&extioiic>;
+	};
+
+	soc {
+		compatible = "ls,nbus", "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges = <0 0x10000000 0 0x10000000 0 0x10000000
+			0 0x2000000  0 0x2000000  0 0x2000000
+			0 0x40000000 0 0x40000000 0 0x40000000
+			0xfe 0x00000000 0xfe 0 0 0x40000000>;
+		pcie@0 {
+			compatible = "loongson,ls2k-pci";
+ 			device_type = "pci";
+			#size-cells = <2>;
+			#address-cells = <3>;
+			msi-parent = <&msi>;
+
+			reg = <0xfe 0x00000000 0 0x40000000>;
+			ranges = <0x02000000 0 0x40000000 0 0x40000000 0 0x40000000
+				  0x01000000 0 0x00008000 0 0x18400000 0x0 0x8000>;
+
+			xhci0: usb@0,4,0 {
+				reg = <0x2000 0x0 0x0 0x0 0x0>;
+				interrupts = <48 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+
+			gmac0@0,3,0 {
+				reg = <0x1800 0x0 0x0 0x0 0x0>;
+				interrupts = <12 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+
+			gmac1@0,3,1 {
+				reg = <0x1900 0x0 0x0 0x0 0x0>;
+				interrupts = <14 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+
+			gmac2@0,3,2 {
+				reg = <0x1a00 0x0 0x0 0x0 0x0>;
+				interrupts = <17 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+
+			xhci1: usb@0,25,0 {
+				reg = <0xc800 0x0 0x0 0x0 0x0>;
+				interrupts = <22 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+			gpu@0,6 {
+			    reg = <0x3000 0x0 0x0 0x0 0x0>;
+			    interrupts = <29 IRQ_TYPE_LEVEL_HIGH>;
+			    interrupt-parent = <&platic>;
+			    
+			};
+
+			dc@0,6,1 {
+				reg = <0x3100 0x0 0x0 0x0 0x0>;
+				interrupts = <28 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+
+			hda@0,7 {
+				reg = <0x3800 0x0 0x0 0x0 0x0>;
+				interrupts = <58 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+
+			ahci@0,8 {
+				reg = <0x4000 0x0 0x0 0x0 0x0>;
+				interrupts = <16 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+
+			pci_bridge@0,9 {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x4800 0x0 0x0 0x0 0x0>;
+				interrupts = <32 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 32 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			pci_bridge@0,0xa {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x5000 0x0 0x0 0x0 0x0>;
+				interrupts = <33 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 33 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			pci_bridge@0,0xb {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x5800 0x0 0x0 0x0 0x0>;
+				interrupts = <34 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 34 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			pci_bridge@0,0xc {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x6000 0x0 0x0 0x0 0x0>;
+				interrupts = <35 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 35 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			pci_bridge@0,13 {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x6800 0x0 0x0 0x0 0x0>;
+				interrupts = <36 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 36 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			pci_bridge@0,14 {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x7000 0x0 0x0 0x0 0x0>;
+				interrupts = <37 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 37 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			pci_bridge@0,0xf {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x7800 0x0 0x0 0x0 0x0>;
+				interrupts = <40 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 40 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			pci_bridge@0,0x10 {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0x8000 0x0 0x0 0x0 0x0>;
+				interrupts = <30 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &platic 30 IRQ_TYPE_LEVEL_HIGH>;
+			};
+
+			rio0@0,0x18 {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0xc000 0x0 0x0 0x0 0x0>;
+				interrupts = <3 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+			};
+
+			rio1@0,0x1b {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+				reg = <0xd800 0x0 0x0 0x0 0x0>;
+				interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-parent = <&platic>;
+
+			};
+		};
+		spi0: spi@0x1fe001f0 {
+			  compatible = "loongson,ls-spi";
+			  #address-cells = <1>;
+			  #size-cells = <0>;
+			  reg = <0 0x1fe001f0 0 0x10>;
+			  spidev@0{
+			      compatible = "jedec,spi-nor";
+			      spi-max-frequency = <40000000>;
+			      reg = <0>;
+			  };
+		};
+		node_uart0: serial@0x1fe001e0 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x1fe001e0 0 0x10>;
+			clock-frequency = <100000000>;
+			interrupt-parent = <&iointc>;
+			interrupts = <10>;
+			no-loopback-test;
+		};
+		cpu_uart0: serial@0x10080000 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080000 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+#if 0   /* for gmac2 */
+		cpu_uart1: serial@0x10080100 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080100 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+#endif
+
+		cpu_uart2: serial@0x10080200 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080200 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+
+            csm330a0: csm330a {
+                compatible = "zhiyuan,csm330";
+                gpios = <&pioB 8  0     /* RST  */
+                         &pioB 9  0 >;  /* CONF */
+                status = "okay";
+            };
+		};
+ 
+		cpu_uart3: serial@0x10080300 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080300 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+		cpu_uart4: serial@0x10080400 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080400 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+		cpu_uart5: serial@0x10080500 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080500 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+#if 0   /* as gmac2 pins */
+		cpu_uart6: serial@0x10080600 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080600 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+		cpu_uart7: serial@0x10080700 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080700 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+		cpu_uart8: serial@0x10080800 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080800 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+		};
+#endif
+		cpu_uart11: serial@0x10080b00 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080b00 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+
+            csm330a3: csm330a {
+                pinctrl-names = "default";
+                compatible = "zhiyuan,csm330";
+                gpios = <&pioB 8  0     /* RST  */
+                         &pioB 9  0 >;  /* CONF */
+                status = "okay";
+            };
+		};
+		cpu_uart9: serial@0x10080900 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080900 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+
+            csm330a1: csm330a {
+                pinctrl-names = "default";
+                compatible = "zhiyuan,csm330";
+                gpios = <&pioB 8  0     /* RST  */
+                         &pioB 9  0 >;  /* CONF */
+                status = "okay";
+            };
+		};
+		cpu_uart10: serial@0x10080a00 {
+			#device_type = "serial";
+			compatible = "ns16550a";
+			reg = <0 0x10080a00 0 0x100>;
+			clock-frequency = <50000000>;
+			interrupt-parent = <&platic>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+
+#if 0   /* port not avaliable */
+            csm330a2: csm330a {
+                pinctrl-names = "default";
+                compatible = "zhiyuan,csm330";
+                gpios = <&pioB 8  0     /* RST  */
+                         &pioB 9  0 >;  /* CONF */
+                status = "okay";
+            };
+#endif
+		};
+		pioA: gpio@0x1fe00500 {         //node-gpio:gpio0~31
+			  compatible = "ls,ls2k-gpio", "ls,ls-gpio";
+			  reg = <0 0x1fe00500 0 0x38>;
+			  ngpios = <32>;
+			  gpio-controller;
+			  #gpio-cells = <2>;
+
+			  interrupt-parent = <&iointc>;
+			  interrupts =
+			      <0>, <1>, <2>, <3>, <4>, <5>,<6>, <7>,
+			      <0>, <1>, <2>, <3>, <4>, <5>,<6>, <7>,
+			      <0>, <1>, <2>, <3>, <4>, <5>,<6>, <7>,
+			      <0>, <1>, <2>, <3>, <4>, <5>,<6>, <7>;
+		};
+		pioB: gpio@100e0800 {           //brig-gpio:gpio32~95
+			  compatible = "loongson,ls7a-gpio";
+			  reg = <0 0x100e0800 0 0x800>;
+			  gpio-controller;
+			  #gpio-cells = <2>;
+			  ngpios = <64>;
+			  conf_offset = <0x0>;
+			  out_offset = <0x100>;
+			  in_offset = <0x200>;
+			  inten_offset = <0x300>;
+			  gpio_base = <32>;
+			  interrupt-parent = <&platic>;
+			  interrupts =
+			      <60 IRQ_TYPE_NONE>,
+			      <61 IRQ_TYPE_NONE>,
+			      <62 IRQ_TYPE_NONE>,
+			      <63 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <60 IRQ_TYPE_NONE>,
+			      <61 IRQ_TYPE_NONE>,
+			      <62 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <63 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>,
+			      <59 IRQ_TYPE_NONE>;
+		};
+
+                i2c0: i2c@1fe00120 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x1fe00120 0 0x8>;
+			interrupt-parent = <&iointc>;
+			interrupts = <8>;
+
+            hwmon@48 {
+				compatible = "national,lm75";
+				reg = <0x48>;
+            };
+
+			rtc@68 {
+				compatible = "dallas,ds1339";
+				reg = <0x68>;
+			};
+		};
+
+		i2c1: i2c@1fe00130 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x1fe00130 0 0x8>;
+			interrupt-parent = <&iointc>;
+			interrupts = <9>;
+		};
+     		
+		i2c2: i2c@10090000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x10090000 0 0x8>;
+			interrupt-parent = <&platic>;
+			interrupts = <9 IRQ_TYPE_LEVEL_HIGH>;
+		};
+        i2c3: i2c@10090100 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x10090100 0 0x8>;
+			interrupt-parent = <&platic>;
+			interrupts = <9 IRQ_TYPE_LEVEL_HIGH>;
+		};
+		emmc0@0x79990000 {
+			#address-cells = <2>;
+		    	compatible = "loongson,ls2k_sdio_1.1";
+			reg = <0 0x79990000 0 0x1000>;
+			interrupt-parent = <&platic>;
+			interrupts = <51 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "ls2k_mci_irq";
+			clock-frequency = <0 30000000>;
+			max-frequency = <15000000>;
+			/*dll = <0x7800>;*/
+			bus-width = <8>;
+
+			cap-mmc-highspeed;
+			no_sd;
+			no_sdio;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+#if 0
+		sdio0@0x79991000 {
+			#address-cells = <2>;
+		    	compatible = "loongson,ls2k_sdio_1.1";
+			reg = <0 0x79991000 0 0x1000>;
+			//cd-gpio = <&pioB 2 0>;        //Just open for cd line with irq,don't open poll mode
+			interrupt-parent = <&platic>;
+			interrupts = <50 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "ls2k_mci_irq";
+			clock-frequency = <0 50000000>;
+			bus-width = <4>;
+			cap-sd-highspeed;
+			no-mmc;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+#endif
+#if 0
+		can0: can@10081000{
+			  compatible = "ls2k1500,sja1000";
+			  reg = <0 0x10081000 0 0xff>;
+			  nxp,external-clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <11 IRQ_TYPE_LEVEL_HIGH 4 IRQ_TYPE_LEVEL_HIGH>;
+			  dmatx = <1>;
+			  dmarx = <0>;
+		};
+		can1: can@10081100 {
+			  compatible = "ls2k1500,sja1000";
+			  reg = <0 0x10081100 0 0xff>;
+			  nxp,external-clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <11 IRQ_TYPE_LEVEL_HIGH 4 IRQ_TYPE_LEVEL_HIGH>;
+		};
+		can2: can@10081200 {
+			  compatible = "ls2k1500,sja1000";
+			  reg = <0 0x10081200 0 0xff>;
+			  nxp,external-clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <11 IRQ_TYPE_LEVEL_HIGH 4 IRQ_TYPE_LEVEL_HIGH>;
+		};
+		can3: can@10081300 {
+			  compatible = "ls2k1500,sja1000";
+			  reg = <0 0x10081300 0 0xff>;
+			  nxp,external-clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <11 IRQ_TYPE_LEVEL_HIGH 4 IRQ_TYPE_LEVEL_HIGH>;
+		};
+		can4: can@10081400 {
+			  compatible = "ls2k1500,sja1000";
+			  reg = <0 0x10081400 0 0xff>;
+			  nxp,external-clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <11 IRQ_TYPE_LEVEL_HIGH 4 IRQ_TYPE_LEVEL_HIGH>;
+		};
+		can5: can@10081500 {
+			  compatible = "ls2k1500,sja1000";
+			  reg = <0 0x10081500 0 0xff>;
+			  nxp,external-clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <11 IRQ_TYPE_LEVEL_HIGH 4 IRQ_TYPE_LEVEL_HIGH>;
+		};
+#endif
+		pwm0: pwm@100a0000{
+			  compatible = "loongson,ls2k-pwm";
+			  reg = <0 0x100a0000 0 0x10>;
+			  clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <24 IRQ_TYPE_LEVEL_HIGH>;
+			  #pwm-cells = <2>;
+		};
+		pwm1: pwm@100a0100{
+			  compatible = "loongson,ls2k-pwm";
+			  reg = <0 0x100a0100 0 0x10>;
+			  clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <25 IRQ_TYPE_LEVEL_HIGH>;
+			  #pwm-cells = <2>;
+		};
+		pwm2: pwm@100a0200{
+			  compatible = "loongson,ls2k-pwm";
+			  reg = <0 0x100a0200 0 0x10>;
+			  clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <26 IRQ_TYPE_LEVEL_HIGH>;
+			  #pwm-cells = <2>;
+		};
+		pwm3: pwm@100a0300{
+			  compatible = "loongson,ls2k-pwm";
+			  reg = <0 0x100a0300 0 0x10>;
+			  clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <27 IRQ_TYPE_LEVEL_HIGH>;
+			  #pwm-cells = <2>;
+		};
+#if 0   /* as csm330a RST and CONF pins */
+		pwm4: pwm@100a0400{
+			  compatible = "loongson,ls2k-pwm";
+			  reg = <0 0x100a0400 0 0x10>;
+			  clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+			  #pwm-cells = <2>;
+		};
+		pwm5: pwm@100a0500{
+			  compatible = "loongson,ls2k-pwm";
+			  reg = <0 0x100a0500 0 0x10>;
+			  clock-frequency = <50000000>;
+			  interrupt-parent = <&platic>;
+			  interrupts = <39 IRQ_TYPE_LEVEL_HIGH>;
+		    	  #pwm-cells = <2>;
+		};
+#endif
+		i2s: i2s@0x1fe2d000 {
+			 compatible = "loongson,ls-i2s";
+			 clock-frequency = <1200000000>;/*clock-frequency = core freq */
+		};
+		audio: audio@0x1fe2d000 {
+			 compatible = "loongson,ls-pcm-audio";
+			 interrupt-parent = <&platic>;
+			 interrupts = <54 IRQ_TYPE_LEVEL_HIGH 55 IRQ_TYPE_LEVEL_HIGH>;
+			 interrupt-names = "i2s_irq0", "i2s_irq1";
+			 dma-names = "i2s_play", "i2s_record";
+			 dma-mask = <0xffffffff 0xffffffff>;
+		};
+		sound {
+		 	compatible = "loongson,ls-sound";
+			loongson,i2s-controller = <&i2s>;
+			loongson,audio-codec = <&audio>;
+			codec-names = "ES8336 PAIF RX","Playback", "ES8336 HiFi", "es8336.1-0011",
+			    		"ES8336 PAIF TX","Capture","ES8336 HiFi","es8336.1-0011";
+		};
+
+#if 0
+		rtc0: rtc@100d0100{
+			compatible = "loongson,ls-rtc";
+			reg = <0 0x100d0100 0 0x100>;
+			interrupt-parent = <&platic>;
+			interrupts = <76 IRQ_TYPE_LEVEL_HIGH>;
+		};
+#endif
+		pmc: syscon@0x100d0000 {
+			 compatible = "syscon";
+			 reg = <0x0 0x100d0000 0x0 0x58>;
+		};
+		reboot {
+		    	compatible ="syscon-reboot-2k2000";
+			regmap = <&pmc>;
+			offset = <0x30>;
+			mask = <0x4>;
+		};
+		poweroff {
+		    	compatible ="syscon-poweroff";
+			regmap = <&pmc>;
+			offset = <0x30>;
+			mask = <0x4>;
+
+		};
+	};
+};

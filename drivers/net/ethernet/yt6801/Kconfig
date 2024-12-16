@@ -1,0 +1,18 @@
+config NET_VENDOR_YT6801
+     bool "Yt6801 devices"
+     default y
+     ---help---
+     If you have a network (Ethernet) card belonging to this class, say Y
+ 
+if NET_VENDOR_YT6801
+  
+config YT6801
+    tristate "YT6801 Network Card support"
+	depends on PCI
+    default n
+    ---help---
+    This driver supports YT6801 Network adapters.
+	To compile this driver as a module, choose M here. The module
+    will be called rnp.
+    
+endif

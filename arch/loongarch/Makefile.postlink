@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: GPL-2.0
+# ===========================================================================
+# Post-link LoongArch pass
+# ===========================================================================
+#
+# 1. Insert relocations into vmlinux
+
+PHONY := __archpost
+__archpost:
+
+-include include/config/auto.conf
+include scripts/Kbuild.include
+
+CMD_RELOCS = arch/loongarch/boot/tools/relocs --keep
+quiet_cmd_relocs = RELOCS  $@
+      cmd_relocs = $(CMD_RELOCS) $@
+
+quiet_cmd_strip_relocs = RSTRIP  $@
+      cmd_strip_relocs = \
+	$(OBJCOPY) --remove-section='.rel.*' --remove-section='.rel__*' \
+		   --remove-section='.rela.*' --remove-section='.rela__*' $@
+
+# `@true` prevents complaint when there is nothing to be done
+
+vmlinux: FORCE
+	@true
+ifeq ($(CONFIG_RELOCATABLE),y)
+	$(call cmd,relocs)
+	$(call cmd,strip_relocs)
+endif
+
+%.ko: FORCE
+	@true
+
+clean:
+	@true
+
+PHONY += FORCE clean
+
+FORCE:
+
+.PHONY: $(PHONY)

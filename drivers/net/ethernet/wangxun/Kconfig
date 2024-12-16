@@ -1,0 +1,38 @@
+#
+# WangXun network device configuration
+#
+
+config NET_VENDOR_WANGXUN
+	bool "WangXun devices"
+	default y
+	---help---
+	  If you have a network (Ethernet) card belonging to this class, say Y
+
+if NET_VENDOR_WANGXUN
+
+config NGBE
+	tristate "WangXun(R) PCI-Express Gigabit Ethernet support"
+	depends on PCI
+	select PTP_1588_CLOCK
+	select I2C
+	select I2C_ALGOBIT
+	default m
+	---help---
+	  This driver supports WangXun(R) gigabit ethernet family of
+	  adapters.
+	  To compile this driver as a module, choose M here. The module
+	  will be called ngbe.
+
+config TXGBE
+	tristate "WangXun(R) 10GbE PCI Express adapters support"
+	depends on PCI
+	select MDIO
+	select PTP_1588_CLOCK
+	default m
+	---help---
+	  This driver supports WangXun(R) 10GbE PCI Express family of
+	  adapters.
+	  To compile this driver as a module, choose M here. The module
+	  will be called ixgbe.
+
+endif # NET_VENDOR_WANGXUN

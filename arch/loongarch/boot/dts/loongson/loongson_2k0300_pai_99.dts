@@ -1,0 +1,185 @@
+#include "loongson_2k0300.dtsi"
+
+/ {
+    memory {
+        name = "memory";
+        device_type = "memory";
+        reg =  <0 0x00200000 0 0x0ee00000
+             0 0x90000000 0 0x10000000>;
+    };
+};
+
+&cpu_uart0{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&uart0_2bit_m0>;
+};
+
+&cpu_uart1{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&uart1_2bit_m0>;
+};
+
+&cpu_uart2{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&uart2_2bit_m0>;
+};
+
+&cpu_uart3{
+    status = "disabled";
+    pinctrl-names = "default";
+    pinctrl-0 = <&uart3_2bit_m0>;
+};
+
+&gmac0{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&gmac0_12bit_f0>, <&gmac0_12bit_f1>;
+};
+&gmac1{
+    status = "disable";
+    pinctrl-names = "default";
+    pinctrl-0 = <&gmac1_12bit_f0>, <&gmac1_12bit_f1>;
+};
+&rtc0{
+	status = "okay";
+};
+&can2{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&can2_mux_m0>;
+};
+&can3{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&can3_mux_m0>;
+};
+
+&emmc0{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&sdio0_pin_f0>, <&sdio0_pin_f1>;
+};
+&sdio1{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&sdio1_6bit>;
+    cd-gpio = <&gpa4 7 1>;
+};
+
+&i2c0{
+    status = "okay";
+    clock-frequency = <100000>;
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2c0_mux_m0>;
+
+    codec@10{
+        compatible = "es8323";
+	reg = <0x10>;
+    };
+
+    gt9xx-i2c@14{
+    	status = "okay";
+    	compatible = "goodix,gt9xx";
+    	reg = <0x14>;
+    	reset-gpios = <&gpa3 5 GPIO_ACTIVE_HIGH>;
+    	irq-gpios = <&gpa3 4 GPIO_ACTIVE_HIGH>;
+    	irq-flags = <IRQ_TYPE_EDGE_FALLING>;
+    	goodix,type-a-report = <0>;
+	goodix,driver-send-cfg = <0>;
+    	goodix,create-wr-node = <1>;
+    	goodix,wakeup-with-reset = <0>;
+    	goodix,resume-in-workqueue = <0>;
+    	goodix,int-sync = <1>;
+    	goodix,swap-x2y = <0>;
+    	goodix,esd-protect = <0>;
+	goodix,auto-update = <1>;
+    	goodix,auto-update-cfg = <0>;
+    	goodix,power-off-sleep = <0>;
+    	goodix.pen-suppress-finger = <0>;
+    	goodix,cfg-group0 = [
+        	53 D0 02 00 05 05 F5 D5 21 48 2D 0F 5A 41 0E 05 00 00 32
+            	32 20 00 05 14 14 1A 14 8B 2B 00
+            	];
+    };
+
+};
+&i2c1{
+    status = "okay";
+    clock-frequency = <400000>;
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2c1_mux_m0>;
+};
+
+&spi0{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&spi0_6bit_f0>,<&spi0_6bit_f1>;
+
+    norflash@0 {
+       reg = <0>;
+       spi-rx-bus-width = <4>;
+       spi-max-frequency = <25000000>;
+       #address-cells = <1>;
+       #size-cells = <1>;
+       partitions {
+           compatible = "fixed-partitions";
+           #address-cells = <1>;
+           #size-cells = <1>;
+
+           boot@0 {
+               label = "boot";
+               reg = <0x0000000 0x100000>;
+               /*read-only;*/
+           };
+
+           kernel@100000 {
+               label = "kernel";
+               reg = <0x100000 0x600000>;
+           };
+
+           rootfs@700000 {
+               label = "rootfs";
+               reg = <0x700000 0x1000000>;
+           };
+       };
+
+    };
+};
+
+&spi2{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&spi2_pin>;
+};
+#if 0
+&pwm2{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pwm2_mux_m1>;
+};
+&pwm3{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pwm3_mux_m1>;
+};
+#endif
+&i2s{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2s_pin_f0>, <&i2s_pin_f1>;
+};
+
+&sound{
+    codec-names = "ES8323 PAIF RX","Playback", "ES8323 HiFi", "ES8323.0-0010",
+					"ES8323 PAIF TX","Capture","ES8323 HiFi","ES8323.0-0010";
+};
+
+&dc{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&lcd_pin_f0>,<&lcd_pin_f1>;
+};
+

@@ -1,0 +1,1019 @@
+# SPDX-License-Identifier: GPL-2.0
+config LOONGARCH
+	bool
+	default y
+	select ARCH_BINFMT_ELF_STATE
+	select ARCH_CLOCKSOURCE_DATA
+	select ARCH_HAS_ELF_RANDOMIZE
+	select ARCH_HAS_DEVMEM_IS_ALLOWED
+	select ARCH_HAS_PTE_SPECIAL if !32BIT
+	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
+	select ARCH_SUPPORTS_NUMA_BALANCING
+	select ARCH_SUPPORTS_UPROBES
+	select ARCH_USE_BUILTIN_BSWAP
+	select ARCH_USE_CMPXCHG_LOCKREF if 64BIT
+	select ARCH_USE_QUEUED_RWLOCKS
+	select ARCH_USE_QUEUED_SPINLOCKS
+	select BUILDTIME_EXTABLE_SORT
+	select CPU_PM if CPU_IDLE
+	select DMA_DIRECT_OPS
+	select GENERIC_ATOMIC64 if !64BIT
+	select GENERIC_CLOCKEVENTS
+	select GENERIC_CMOS_UPDATE
+	select GENERIC_CPU_AUTOPROBE
+	select GENERIC_IRQ_PROBE
+	select GENERIC_IRQ_SHOW
+	select GENERIC_LIB_ASHLDI3
+	select GENERIC_LIB_ASHRDI3
+	select GENERIC_LIB_CMPDI2
+	select GENERIC_LIB_LSHRDI3
+	select GENERIC_LIB_UCMPDI2
+	select GENERIC_SCHED_CLOCK
+	select GENERIC_SMP_IDLE_THREAD
+	select GENERIC_TIME_VSYSCALL
+	select HANDLE_DOMAIN_IRQ
+	select HAVE_ARCH_JUMP_LABEL
+	select HAVE_ARCH_KGDB
+	select HAVE_ARCH_MMAP_RND_BITS if MMU
+	select HAVE_ARCH_SECCOMP_FILTER
+	select HAVE_ARCH_TRACEHOOK
+	select HAVE_ARCH_TRANSPARENT_HUGEPAGE
+	select HAVE_ARCH_AUDITSYSCALL
+	select HAVE_CONTEXT_TRACKING
+	select HAVE_COPY_THREAD_TLS
+	select HAVE_C_RECORDMCOUNT
+	select HAVE_DEBUG_KMEMLEAK
+	select HAVE_DEBUG_STACKOVERFLOW
+	select HAVE_DMA_CONTIGUOUS
+	select HAVE_DYNAMIC_FTRACE
+	select HAVE_DYNAMIC_FTRACE_WITH_REGS
+	select HAVE_EBPF_JIT if 64BIT
+	select HAVE_EFFICIENT_UNALIGNED_ACCESS if !ARCH_STRICT_ALIGN
+	select HAVE_EXIT_THREAD
+	select HAVE_FTRACE_MCOUNT_RECORD
+	select HAVE_FUNCTION_GRAPH_TRACER
+	select HAVE_FUNCTION_TRACER
+	select HAVE_FUTEX_CMPXCHG if FUTEX
+	select HAVE_GENERIC_DMA_COHERENT
+	select HAVE_IOREMAP_PROT
+	select HAVE_IRQ_EXIT_ON_IRQ_STACK
+	select HAVE_IRQ_TIME_ACCOUNTING
+	select HAVE_KPROBES
+	select HAVE_KPROBES_ON_FTRACE
+	select HAVE_KRETPROBES
+	select HAVE_LIVEPATCH
+	select HAVE_MEMBLOCK
+	select HAVE_MEMBLOCK_NODE_MAP
+	select HAVE_MOD_ARCH_SPECIFIC
+	select HAVE_NMI
+	select HAVE_PERF_EVENTS
+	select HAVE_PERF_REGS
+	select HAVE_PERF_USER_STACK_DUMP
+	select HAVE_REGS_AND_STACK_ACCESS_API
+	select HAVE_RELIABLE_STACKTRACE
+	select HAVE_RSEQ
+	select HAVE_STACKPROTECTOR
+	select HAVE_STACK_VALIDATION
+	select HAVE_SYSCALL_TRACEPOINTS
+	select HAVE_VIRT_CPU_ACCOUNTING_GEN if 64BIT || !SMP
+	select IRQ_FORCED_THREADING
+	select MODULES_USE_ELF_RELA if MODULES
+	select PCI_DOMAINS if PCI
+	select PERF_USE_VMALLOC
+	select RTC_LIB if !MACH_LOONGSON64
+	select SYSCTL_EXCEPTION_TRACE
+	select NO_BOOTMEM
+	select ARCH_SUPPORTS_ACPI
+	select ARCH_HAS_ACPI_TABLE_UPGRADE	if ACPI
+	select ACPI_SYSTEM_POWER_STATES_SUPPORT	if ACPI
+	select HAVE_ARCH_KASAN if 64BIT
+	select GENERIC_PCI_IOMAP
+	select LOONGARCH_CRC32_SUPPORT
+	select ARCH_HAS_SG_CHAIN
+	select SYSCTL_ARCH_UNALIGN_ALLOW
+	select SYSCTL_ARCH_UNALIGN_NO_WARN
+	select USER_STACKTRACE_SUPPORT
+	select IOREMAP_WITH_TLB
+
+menu "Machine selection"
+
+choice
+	prompt "System type"
+	default MACH_LOONGSON64
+
+config MACH_LOONGSON64
+	bool "Loongson 64-bit family of machines"
+	select ARCH_SPARSEMEM_ENABLE
+	select ARCH_MIGHT_HAVE_PC_PARPORT
+	select ARCH_MIGHT_HAVE_PC_SERIO
+	select GENERIC_ISA_DMA
+	select ISA
+	select PCI
+	select IRQ_LOONGARCH_CPU
+	select SPARSE_IRQ
+	select SYS_HAS_CPU_LOONGSON64
+	select SYS_SUPPORTS_SMP
+	select SYS_SUPPORTS_ZBOOT
+	select SYS_SUPPORTS_HOTPLUG_CPU
+	select SYS_SUPPORTS_NUMA
+	select SYS_SUPPORTS_64BIT_KERNEL
+	select SYS_SUPPORTS_HIGHMEM
+	select SYS_SUPPORTS_RELOCATABLE
+	select ZONE_DMA32
+	select USE_OF
+	help
+	  This enables the support of Loongson 64-bit family of machines. These
+	  machines are based on new Loongson-3 processors (Old Loongson is MIPS
+	  compatible, while new Loongson is based on LoongArch ISA).
+
+endchoice
+
+source "arch/loongarch/la64/Kconfig"
+
+endmenu
+
+config RWSEM_GENERIC_SPINLOCK
+	bool
+	default n
+
+config RWSEM_XCHGADD_ALGORITHM
+	bool
+	default y
+
+config GENERIC_HWEIGHT
+	bool
+	default y
+
+config GENERIC_CALIBRATE_DELAY
+	bool
+	default y
+
+config SCHED_OMIT_FRAME_POINTER
+	bool
+	default y
+
+config ARCH_SUPPORTS_UPROBES
+	bool
+
+config SYS_SUPPORTS_HOTPLUG_CPU
+	bool
+
+config ARCH_ENABLE_THP_MIGRATION
+	def_bool y
+	depends on TRANSPARENT_HUGEPAGE
+config GENERIC_CSUM
+	def_bool y
+
+config GENERIC_ISA_DMA
+	bool
+
+config SYS_SUPPORTS_RELOCATABLE
+	bool
+	help
+	 Selected if the platform supports relocating the kernel.
+	 The platform must provide plat_get_fdt() if it selects CONFIG_USE_OF
+	 to allow access to command line and entropy sources.
+
+config SYS_SUPPORTS_HUGETLBFS
+	def_bool y
+
+config LOONGARCH_HUGE_TLB_SUPPORT
+	def_bool HUGETLB_PAGE || TRANSPARENT_HUGEPAGE
+
+config L1_CACHE_SHIFT
+	int
+	default "6"
+
+config HAVE_STD_PC_SERIAL_PORT
+	bool
+
+config PARAVIRT
+    bool "Enable paravirtualization code"
+    help
+      This changes the kernel so it can modify itself when it is run
+      under a hypervisor, potentially improving performance significantly
+      over full virtualization.
+
+config PARAVIRT_SPINLOCKS
+        bool "Paravirtualization layer for spinlocks"
+        depends on PARAVIRT && SMP
+        ---help---
+          Paravirtualized spinlocks allow a pvops backend to replace the
+          spinlock implementation with something virtualization-friendly
+          (for example, block the virtual CPU rather than spinning).
+
+          It has a minimal impact on native kernels and gives a nice performance
+          benefit on paravirtualized KVM kernels.
+
+          If you are unsure how to answer this question, answer Y.
+
+config QUEUED_LOCK_STAT
+        bool "Paravirt queued spinlock statistics"
+        depends on PARAVIRT_SPINLOCKS && DEBUG_FS
+        ---help---
+          Enable the collection of statistical data on the slowpath
+          behavior of paravirtualized queued spinlocks and report
+          them on debugfs.
+
+config PARAVIRT_TIME_ACCOUNTING
+    bool "Paravirtual steal time accounting"
+    select PARAVIRT
+    default n
+    help
+      Select this option to enable fine granularity task steal time
+      accounting. Time spent executing other tasks in parallel with
+      the current vCPU is discounted from the vCPU power. To account for
+      that, there can be a small performance impact.
+
+      If in doubt, say N here.
+
+menu "CPU selection"
+
+choice
+	prompt "CPU type"
+	default CPU_LOONGSON64
+
+config CPU_LOONGSON64
+	bool "Loongson 64-bit CPU"
+	depends on SYS_HAS_CPU_LOONGSON64
+	select ARCH_HAS_PHYS_TO_DMA
+	select CPU_SUPPORTS_64BIT_KERNEL
+	select CPU_SUPPORTS_HIGHMEM
+	select CPU_SUPPORTS_LSX
+	select CPU_SUPPORTS_LASX
+	select WEAK_ORDERING
+	select WEAK_REORDERING_BEYOND_LLSC
+	select GPIOLIB
+	select SWIOTLB
+	select HAVE_KVM
+	select ARCH_SUPPORTS_ATOMIC_RMW
+	select ARCH_INLINE_READ_LOCK		if !PREEMPT
+	select ARCH_INLINE_READ_LOCK_BH		if !PREEMPT
+	select ARCH_INLINE_READ_LOCK_IRQ	if !PREEMPT
+	select ARCH_INLINE_READ_LOCK_IRQSAVE	if !PREEMPT
+	select ARCH_INLINE_READ_UNLOCK		if !PREEMPT
+	select ARCH_INLINE_READ_UNLOCK_BH	if !PREEMPT
+	select ARCH_INLINE_READ_UNLOCK_IRQ	if !PREEMPT
+	select ARCH_INLINE_READ_UNLOCK_IRQRESTORE	if !PREEMPT
+	select ARCH_INLINE_WRITE_LOCK		if !PREEMPT
+	select ARCH_INLINE_WRITE_LOCK_BH	if !PREEMPT
+	select ARCH_INLINE_WRITE_LOCK_IRQ	if !PREEMPT
+	select ARCH_INLINE_WRITE_LOCK_IRQSAVE	if !PREEMPT
+	select ARCH_INLINE_WRITE_UNLOCK		if !PREEMPT
+	select ARCH_INLINE_WRITE_UNLOCK_BH	if !PREEMPT
+	select ARCH_INLINE_WRITE_UNLOCK_IRQ	if !PREEMPT
+	select ARCH_INLINE_WRITE_UNLOCK_IRQRESTORE	if !PREEMPT
+	select ARCH_INLINE_SPIN_TRYLOCK		if !PREEMPT
+	select ARCH_INLINE_SPIN_TRYLOCK_BH	if !PREEMPT
+	select ARCH_INLINE_SPIN_LOCK		if !PREEMPT
+	select ARCH_INLINE_SPIN_LOCK_BH		if !PREEMPT
+	select ARCH_INLINE_SPIN_LOCK_IRQ	if !PREEMPT
+	select ARCH_INLINE_SPIN_LOCK_IRQSAVE	if !PREEMPT
+	select ARCH_INLINE_SPIN_UNLOCK		if !PREEMPT
+	select ARCH_INLINE_SPIN_UNLOCK_BH	if !PREEMPT
+	select ARCH_INLINE_SPIN_UNLOCK_IRQ	if !PREEMPT
+	select ARCH_INLINE_SPIN_UNLOCK_IRQRESTORE	if !PREEMPT
+	help
+	  The Loongson 64-bit processor implements the LoongArch64 (the 64-bit
+	  version of LoongArch) instruction set.
+
+endchoice
+
+config SYS_SUPPORTS_ZBOOT
+	bool
+	select HAVE_KERNEL_GZIP
+	select HAVE_KERNEL_BZIP2
+	select HAVE_KERNEL_LZ4
+	select HAVE_KERNEL_LZMA
+	select HAVE_KERNEL_LZO
+	select HAVE_KERNEL_XZ
+
+config SYS_HAS_CPU_LOONGSON64
+	bool
+	select CPU_SUPPORTS_CPUFREQ
+
+#
+# CPU may reorder R->R, R->W, W->R, W->W
+# Reordering beyond LL and SC is handled in WEAK_REORDERING_BEYOND_LLSC
+#
+config WEAK_ORDERING
+	bool
+
+#
+# CPU may reorder reads and writes beyond LL/SC
+# CPU may reorder R->LL, R->LL, W->LL, W->LL, R->SC, R->SC, W->SC, W->SC
+#
+config WEAK_REORDERING_BEYOND_LLSC
+	bool
+
+endmenu
+
+config SYS_SUPPORTS_32BIT_KERNEL
+	bool
+config SYS_SUPPORTS_64BIT_KERNEL
+	bool
+config CPU_SUPPORTS_32BIT_KERNEL
+	bool
+config CPU_SUPPORTS_64BIT_KERNEL
+	bool
+config CPU_SUPPORTS_CPUFREQ
+	bool
+config HARDWARE_WATCHPOINTS
+       bool
+       default y
+
+menu "Kernel type"
+
+choice
+	prompt "Kernel code model"
+	help
+	  You should only select this option if you have a workload that
+	  actually benefits from 64-bit processing or if your machine has
+	  large memory.  You will only be presented a single option in this
+	  menu if your system does not support both 32-bit and 64-bit kernels.
+
+config 32BIT
+	bool "32-bit kernel"
+	depends on CPU_SUPPORTS_32BIT_KERNEL && SYS_SUPPORTS_32BIT_KERNEL
+	help
+	  Select this option if you want to build a 32-bit kernel.
+
+config 64BIT
+	bool "64-bit kernel"
+	depends on CPU_SUPPORTS_64BIT_KERNEL && SYS_SUPPORTS_64BIT_KERNEL
+	help
+	  Select this option if you want to build a 64-bit kernel.
+
+endchoice
+
+choice
+	prompt "Kernel page size"
+	default PAGE_SIZE_4KB
+
+config PAGE_SIZE_4KB
+	bool "4kB"
+	help
+	 This option selects the standard 4kB Linux page size.
+
+config PAGE_SIZE_16KB
+	bool "16kB"
+	help
+	  This option selects the standard 16kB Linux page size.
+
+config PAGE_SIZE_64KB
+	bool "64kB"
+	help
+	  This option selects the standard 64kB Linux page size.
+
+endchoice
+
+choice
+	prompt "Virtual memory address space bits"
+	default VA_BITS_40
+	help
+	  Allows choosing one of multiple possible virtual memory
+	  address space bits for applications. The level of page
+	  translation table is determined by a combination of page
+	  size and virtual memory address space bits.
+
+config VA_BITS_40
+	bool "40-bits"
+	depends on 64BIT
+	help
+	  Support a maximum at least 40 bits of application virtual memory.
+
+config VA_BITS_48
+	bool "48-bits"
+	depends on 64BIT
+	help
+	  Support a maximum at least 48 bits of application virtual memory.
+endchoice
+
+config FORCE_MAX_ZONEORDER
+	int "Maximum zone order"
+	range 14 64 if PAGE_SIZE_64KB
+	default "14" if PAGE_SIZE_64KB
+	range 12 64 if PAGE_SIZE_16KB
+	default "12" if PAGE_SIZE_16KB
+	range 11 64
+	default "11"
+	help
+	  The kernel memory allocator divides physically contiguous memory
+	  blocks into "zones", where each zone is a power of two number of
+	  pages.  This option selects the largest power of two that the kernel
+	  keeps in the memory allocator.  If you need to allocate very large
+	  blocks of physically contiguous memory, then you may need to
+	  increase this value.
+
+	  This config option is actually maximum order plus one. For example,
+	  a value of 11 means that the largest free memory block is 2^10 pages.
+
+	  The page size is not necessarily 4KB.  Keep this in mind
+	  when choosing a value for this option.
+
+config CPU_HAS_PREFETCH
+	bool
+	default y
+
+config CPU_GENERIC_DUMP_TLB
+	bool
+	default y
+
+config CPU_HAS_FPU
+	bool
+	default y
+
+config CPU_HAS_LSX
+	bool "Support for the Loongson SIMD Extension"
+	depends on CPU_SUPPORTS_LSX
+	depends on 64BIT
+	help
+	  Loongson SIMD Extension (LSX) introduces 128 bit wide vector registers
+	  and a set of SIMD instructions to operate on them. When this option
+	  is enabled the kernel will support allocating & switching LSX
+	  vector register contexts. If you know that your kernel will only be
+	  running on CPUs which do not support LSX or that your userland will
+	  not be making use of it then you may wish to say N here to reduce
+	  the size & complexity of your kernel.
+
+	  If unsure, say Y.
+
+config CPU_HAS_LASX
+	bool "Support for the Loongson Advanced SIMD Extension"
+	depends on CPU_SUPPORTS_LASX
+	depends on 64BIT && CPU_HAS_LSX
+	help
+	  Loongson Advanced SIMD Extension is 256 bit wide SIMD extension.
+
+	  If unsure, say Y.
+
+config CPU_HAS_LBT
+	bool "Support for Loongson Binary Tranlatition"
+	default y
+
+config LOONGARCH_CRC32_SUPPORT
+	bool
+	default y
+
+#
+# - Highmem only makes sense for the 32-bit kernel.
+# - We use SYS_SUPPORTS_HIGHMEM to offer highmem only for systems where we
+#   know they might have memory configurations that could make use of highmem
+#   support.
+#
+config HIGHMEM
+	bool "High Memory Support"
+	depends on 32BIT && CPU_SUPPORTS_HIGHMEM && SYS_SUPPORTS_HIGHMEM
+
+config CPU_SUPPORTS_HIGHMEM
+	bool
+
+config SYS_SUPPORTS_HIGHMEM
+	bool
+
+config CPU_SUPPORTS_LSX
+	bool
+
+config CPU_SUPPORTS_LASX
+	bool
+
+config ARCH_SPARSEMEM_DEFAULT
+	def_bool ARCH_SPARSEMEM_ENABLE
+
+config ARCH_SELECT_MEMORY_MODEL
+	def_bool ARCH_SPARSEMEM_ENABLE
+
+config ARCH_FLATMEM_ENABLE
+	def_bool y
+	depends on !NUMA
+
+config ARCH_SPARSEMEM_ENABLE
+	def_bool y
+	select SPARSEMEM_VMEMMAP_ENABLE
+	help
+	  Say Y to support efficient handling of sparse physical memory,
+	  for architectures which are either NUMA (Non-Uniform Memory Access)
+	  or have huge holes in the physical address space for other reasons.
+	  See <file:Documentation/vm/numa.rst> for more.
+
+config ARCH_STRICT_ALIGN
+	bool "Enable -mstrict-align to prevent unaligned accesses" if EXPERT
+	default y
+	help
+	  Not all LoongArch cores support h/w unaligned access, we can use
+	  -mstrict-align build parameter to prevent unaligned accesses.
+
+	  CPUs with h/w unaligned access support:
+	  Loongson-2K2000/2K3000/3A5000/3C5000/3D5000.
+
+	  CPUs without h/w unaligned access support:
+	  Loongson-2K500/2K1000.
+
+	  This option is enabled by default to make the kernel be able to run
+	  on all LoongArch systems. But you can disable it manually if you want
+	  to run kernel only on systems with h/w unaligned access support in
+	  order to optimise for performance.
+
+config ARCH_WRITECOMBINE
+	bool "Enable WriteCombine (WUC) for ioremap()"
+	default y
+	help
+	  LoongArch maintains cache coherency in hardware, but when paired
+	  with LS7A chipsets the WUC attribute (Weak-ordered UnCached, which
+	  is similar to WriteCombine) is out of the scope of cache coherency
+	  machanism for PCIe devices (this is a PCIe protocol violation, which
+	  may be fixed in newer chipsets).
+
+	  This means WUC can only used for write-only memory regions now, so
+	  this option is disabled by default, making WUC silently fallback to
+	  SUC for ioremap(). You can enable this option if the kernel is ensured
+	  to run on hardware without this bug.
+
+	  You can override this setting via writecombine=on/off boot parameter.
+
+config NUMA
+	bool "NUMA Support"
+	depends on SYS_SUPPORTS_NUMA
+	select ACPI_NUMA if ACPI
+	select OF_NUMA
+	help
+	  Say Y to compile the kernel to support NUMA (Non-Uniform Memory
+	  Access).  This option improves performance on systems with more
+	  than two nodes; on two node systems it is generally better to
+	  leave it disabled; on single node systems disable this option
+	  disabled.
+
+config SYS_SUPPORTS_NUMA
+	bool
+
+config RELOCATABLE
+	bool "Relocatable kernel"
+	depends on SYS_SUPPORTS_RELOCATABLE
+	help
+	  This builds a kernel image that retains relocation information
+	  so it can be loaded someplace besides the default 1MB.
+	  The relocations make the kernel binary about 15% larger,
+	  but are discarded at runtime
+
+config RELOCATION_TABLE_SIZE
+	hex "Relocation table size"
+	depends on RELOCATABLE
+	range 0x0 0x01000000
+	default "0x00100000"
+	---help---
+	  A table of relocation data will be appended to the kernel binary
+	  and parsed at boot to fix up the relocated kernel.
+
+	  This option allows the amount of space reserved for the table to be
+	  adjusted, although the default of 1Mb should be ok in most cases.
+
+	  The build will fail and a valid size suggested if this is too small.
+
+	  If unsure, leave at the default value.
+
+config RANDOMIZE_BASE
+	bool "Randomize the address of the kernel image"
+	depends on RELOCATABLE
+	---help---
+	   Randomizes the physical and virtual address at which the
+	   kernel image is loaded, as a security feature that
+	   deters exploit attempts relying on knowledge of the location
+	   of kernel internals.
+
+	   Entropy is generated using any coprocessor 0 registers available.
+
+	   The kernel will be offset by up to RANDOMIZE_BASE_MAX_OFFSET.
+
+	   If unsure, say N.
+
+config RANDOMIZE_BASE_MAX_OFFSET
+	hex "Maximum kASLR offset" if EXPERT
+	depends on RANDOMIZE_BASE
+	range 0x0 0x40000000 if 64BIT
+	range 0x0 0x08000000
+	default "0x01000000"
+	---help---
+	  When kASLR is active, this provides the maximum offset that will
+	  be applied to the kernel image.
+
+	  This is limited by the size of KPRANGE1, 256Mb on 32-bit or 1Gb with
+	  64-bit. The default is 16Mb.
+
+config NODES_SHIFT
+	int
+	default "6"
+	depends on NEED_MULTIPLE_NODES
+
+config HAVE_SETUP_PER_CPU_AREA
+	def_bool y
+	depends on NUMA
+
+config NEED_PER_CPU_EMBED_FIRST_CHUNK
+	def_bool y
+	depends on NUMA
+
+config NEED_PER_CPU_PAGE_FIRST_CHUNK
+	def_bool y
+
+config DMI
+	bool "Enable DMI scanning"
+	select DMI_SCAN_MACHINE_NON_EFI_FALLBACK
+	default y
+	help
+	  Enabled scanning of DMI to identify machine quirks. Say Y
+	  here unless you have verified that your setup is not
+	  affected by entries in the DMI blacklist. Required by PNP
+	  BIOS code.
+
+config EFI
+	bool "EFI runtime service support"
+	select UCS2_STRING
+	select EFI_RUNTIME_WRAPPERS
+	select EFI_PARAMS_FROM_FDT
+	help
+	  This enables the kernel to use EFI runtime services that are
+	  available (such as the EFI variable services).
+
+	  This option is only useful on systems that have EFI firmware.
+	  In addition, you should use the latest ELILO loader available
+	  at <http://elilo.sourceforge.net> in order to take advantage
+	  of EFI runtime services. However, even with this option, the
+	  resultant kernel should continue to boot on existing non-EFI
+	  platforms.
+
+config EFI_STUB
+       bool "EFI stub support"
+       default y
+       depends on EFI
+       select EFI_GENERIC_STUB
+       help
+	  This kernel feature allows a vmlinuz.efi to be loaded directly
+	  by EFI firmware without the use of a bootloader.
+
+config SMP
+	bool "Multi-Processing support"
+	depends on SYS_SUPPORTS_SMP
+	help
+	  This enables support for systems with more than one CPU. If you have
+	  a system with only one CPU, say N. If you have a system with more
+	  than one CPU, say Y.
+
+	  If you say N here, the kernel will run on uni- and multiprocessor
+	  machines, but will use only one CPU of a multiprocessor machine. If
+	  you say Y here, the kernel will run on many, but not all,
+	  uniprocessor machines. On a uniprocessor machine, the kernel
+	  will run faster if you say N here.
+
+	  People using multiprocessor machines who say Y here should also say
+	  Y to "Enhanced Real Time Clock Support", below.
+
+	  See also the SMP-HOWTO available at
+	  <http://www.tldp.org/docs.html#howto>.
+
+	  If you don't know what to do here, say N.
+
+config HOTPLUG_CPU
+	bool "Support for hot-pluggable CPUs"
+	depends on SMP && SYS_SUPPORTS_HOTPLUG_CPU
+	help
+	  Say Y here to allow turning CPUs off and on. CPUs can be
+	  controlled through /sys/devices/system/cpu.
+	  (Note: power management support will enable this option
+	    automatically on SMP systems. )
+	  Say N if you want to disable CPU hotplug.
+
+config AUTOPLUG_CPU
+	tristate "Support for automatic hot-pluggable CPUs"
+	depends on HOTPLUG_CPU
+	help
+	  This option adds a CPUAutoplug driver for Loongson-3 multi-core processors
+	  which cpu frequencies of all cores should be configured together.
+
+	  If in doubt, say N.
+
+config SMP_UP
+	bool
+
+config SYS_SUPPORTS_SMP
+	bool
+
+config NR_CPUS_DEFAULT_4
+	bool
+
+config NR_CPUS_DEFAULT_8
+	bool
+
+config NR_CPUS_DEFAULT_16
+	bool
+
+config NR_CPUS_DEFAULT_32
+	bool
+
+config NR_CPUS_DEFAULT_64
+	bool
+
+config NR_CPUS
+	int "Maximum number of CPUs (2-256)"
+	range 2 256
+	depends on SMP
+	default "4" if NR_CPUS_DEFAULT_4
+	default "8" if NR_CPUS_DEFAULT_8
+	default "16" if NR_CPUS_DEFAULT_16
+	default "32" if NR_CPUS_DEFAULT_32
+	default "64" if NR_CPUS_DEFAULT_64
+	help
+	  This allows you to specify the maximum number of CPUs which this
+	  kernel will support.  The maximum supported value is 32 for 32-bit
+	  kernel and 64 for 64-bit kernels; the minimum value which makes
+	  sense is 1 for Qemu (useful only for kernel debugging purposes)
+	  and 2 for all others.
+
+	  This is purely to save memory - each supported CPU adds
+	  approximately eight kilobytes to the kernel image.  For best
+	  performance should round up your number of processors to the next
+	  power of two.
+
+config IOREMAP_WITH_TLB
+	bool
+
+source kernel/Kconfig.hz
+
+config SCHED_HRTICK
+	def_bool HIGH_RES_TIMERS
+
+config KEXEC
+	bool "Kexec system call"
+	select KEXEC_CORE
+	help
+	  kexec is a system call that implements the ability to shutdown your
+	  current kernel, and to start another kernel.  It is like a reboot
+	  but it is independent of the system firmware.   And like a reboot
+	  you can start any kernel with it, not just Linux.
+
+	  The name comes from the similarity to the exec system call.
+
+	  It is an ongoing process to be certain the hardware in a machine
+	  is properly shutdown, so do not be surprised if this code does not
+	  initially work for you.  As of this writing the exact hardware
+	  interface is strongly in flux, so no good recommendation can be
+	  made.
+
+config CRASH_DUMP
+	bool "Kernel crash dumps"
+	select RELOCATABLE
+	help
+	  Generate crash dump after being started by kexec.
+	  This should be normally only set in special crash dump kernels
+	  which are loaded in the main kernel with kexec-tools into
+	  a specially reserved region and then later executed after
+	  a crash by kdump/kexec.
+
+config SECCOMP
+	bool "Enable seccomp to safely compute untrusted bytecode"
+	depends on PROC_FS
+	default y
+	help
+	  This kernel feature is useful for number crunching applications
+	  that may need to compute untrusted bytecode during their
+	  execution. By using pipes or other transports made available to
+	  the process as file descriptors supporting the read/write
+	  syscalls, it's possible to isolate those applications in
+	  their own address space using seccomp. Once seccomp is
+	  enabled via /proc/<pid>/seccomp, it cannot be disabled
+	  and the task is only allowed to execute a few safe syscalls
+	  defined by each seccomp mode.
+
+	  If unsure, say Y. Only embedded should say N here.
+
+config USE_OF
+	bool
+	select OF
+	select OF_EARLY_FLATTREE
+	select OF_RESERVED_MEM
+	select IRQ_DOMAIN
+
+config BUILTIN_DTB
+	bool "Enable builtin dtb in kernel"
+	depends on LOONGARCH
+	help
+	  Enable builtin dtb in kernel, If the firmware does not provide
+	  an available DTB, this will be used.
+
+config BUILTIN_DTB_NAME
+	string "Built in DTB"
+	depends on BUILTIN_DTB
+	help
+	  Set the name of the DTB to embed in the vmlinux binary
+
+source "kernel/livepatch/Kconfig"
+
+endmenu
+
+config ARCH_ENABLE_MEMORY_HOTPLUG
+	def_bool y
+	depends on LOONGARCH
+
+config ARCH_ENABLE_MEMORY_HOTREMOVE
+	def_bool y
+	depends on MEMORY_HOTPLUG
+
+config USE_PERCPU_NUMA_NODE_ID
+	def_bool y
+	depends on NUMA
+
+config ARCH_MEMORY_PROBE
+	def_bool y
+	depends on MEMORY_HOTPLUG
+
+config HAVE_ARCH_NODEDATA_EXTENSION
+	def_bool y
+	depends on NUMA && ARCH_ENABLE_MEMORY_HOTPLUG
+
+config LOCKDEP_SUPPORT
+	bool
+	default y
+
+config GENERIC_BUG
+	def_bool y
+	depends on BUG
+
+config GENERIC_BUG_RELATIVE_POINTERS
+	def_bool y
+	depends on GENERIC_BUG
+
+config STACKTRACE_SUPPORT
+	bool
+	default y
+
+config HAVE_LATENCYTOP_SUPPORT
+	bool
+	default y
+
+config TRACE_IRQFLAGS_SUPPORT
+	bool
+	default y
+
+config FIX_EARLYCON_MEM
+	def_bool y
+
+config PGTABLE_LEVELS
+	int
+	default 4 if PAGE_SIZE_4KB && VA_BITS_48
+	default 2 if PAGE_SIZE_64KB && VA_BITS_40
+	default 3
+
+config LOONGARCH_AUTO_PFN_OFFSET
+	bool
+
+menu "Bus options (PCI, PCMCIA, EISA, ISA, TC)"
+
+config HW_HAS_EISA
+	bool
+config HW_HAS_PCI
+	bool
+
+config PCI
+	bool "Support for PCI controller"
+	depends on HW_HAS_PCI
+	select PCI_DOMAINS
+	select PCI_ECAM if ACPI
+	select ACPI_MCFG if ACPI
+	help
+	  Find out whether you have a PCI motherboard. PCI is the name of a
+	  bus system, i.e. the way the CPU talks to the other stuff inside
+	  your box. Other bus systems are ISA, EISA, or VESA. If you have PCI,
+	  say Y, otherwise N.
+
+config HT_PCI
+	bool "Support for HT-linked PCI"
+	default y
+	depends on CPU_LOONGSON64
+	select PCI
+	select PCI_DOMAINS
+	help
+	  Loongson family machines use Hyper-Transport bus for inter-core
+	  connection and device connection. The PCI bus is a subordinate
+	  linked at HT. Choose Y for Loongson-3 based machines.
+
+config PCI_DOMAINS
+	bool
+	select PCI_DOMAINS_GENERIC
+
+config PCI_DOMAINS_GENERIC
+	bool
+
+source "drivers/pci/Kconfig"
+
+#
+# ISA support is now enabled via select.  Too many systems still have the one
+# or other ISA chip on the board that users don't know about so don't expect
+# users to choose the right thing ...
+#
+config ISA
+	bool
+
+config EISA
+	bool "EISA support"
+	depends on HW_HAS_EISA
+	select ISA
+	select GENERIC_ISA_DMA
+	---help---
+	  The Extended Industry Standard Architecture (EISA) bus was
+	  developed as an open alternative to the IBM MicroChannel bus.
+
+	  The EISA bus provided some of the features of the IBM MicroChannel
+	  bus while maintaining backward compatibility with cards made for
+	  the older ISA bus.  The EISA bus saw limited use between 1988 and
+	  1995 when it was made obsolete by the PCI bus.
+
+	  Say Y here if you are building a kernel for an EISA-based machine.
+
+	  Otherwise, say N.
+
+source "drivers/eisa/Kconfig"
+
+config QUICKLIST
+	bool
+	default y
+
+config NR_QUICK
+	int
+	depends on QUICKLIST
+	default "3"
+
+config LS_DUP
+	bool
+	default y
+
+config MMU
+	bool
+	default y
+
+config ARCH_MMAP_RND_BITS_MIN
+	default 12 if 64BIT
+	default 8
+
+config ARCH_MMAP_RND_BITS_MAX
+	default 18 if 64BIT
+	default 15
+
+config I8253
+	bool
+	select CLKSRC_I8253
+	select CLKEVT_I8253
+	select LOONGARCH_EXTERNAL_TIMER
+
+config ZONE_DMA
+	bool
+
+config ZONE_DMA32
+	bool
+
+source "drivers/pcmcia/Kconfig"
+
+config HAS_RAPIDIO
+	bool
+	default n
+
+config RAPIDIO
+	tristate "RapidIO support"
+	depends on HAS_RAPIDIO || PCI
+	help
+	  If you say Y here, the kernel will include drivers and
+	  infrastructure code to support RapidIO interconnect devices.
+
+source "drivers/rapidio/Kconfig"
+
+endmenu
+
+menu "Power management options"
+
+config ARCH_HIBERNATION_POSSIBLE
+	def_bool y
+	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
+
+config ARCH_SUSPEND_POSSIBLE
+	def_bool y
+	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
+
+source "kernel/power/Kconfig"
+
+if CPU_LOONGSON64
+source "drivers/acpi/Kconfig"
+endif
+
+endmenu
+
+config LOONGARCH_EXTERNAL_TIMER
+	bool
+
+menu "CPU Power Management"
+
+source "drivers/cpufreq/Kconfig"
+
+source "drivers/cpuidle/Kconfig"
+
+endmenu
+
+source "drivers/firmware/Kconfig"
+source "arch/loongarch/kvm/Kconfig"

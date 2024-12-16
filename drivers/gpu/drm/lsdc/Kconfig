@@ -1,0 +1,54 @@
+config DRM_LSDC
+	tristate "Kernel modesetting driver for loongson display controller"
+	depends on DRM
+	depends on MACH_LOONGSON64 || LOONGARCH || COMPILE_TEST
+	select OF
+	select CMA if HAVE_DMA_CONTIGUOUS
+	select DMA_CMA if HAVE_DMA_CONTIGUOUS
+	select DRM_KMS_HELPER
+	select DRM_KMS_FB_HELPER
+	select DRM_GEM_CMA_HELPER
+	select DRM_KMS_CMA_HELPER
+	select VIDEOMODE_HELPERS
+	select BACKLIGHT_PWM
+	select REGULATOR
+	select REGULATOR_FIXED_VOLTAGE
+	select DRM_PANEL_SIMPLE
+	select DRM_DUMB_VGA_DAC
+	select DRM_SII902X
+	select DRM_LT8618
+	select DRM_TI_TFP410
+	select I2C_GPIO
+	select I2C_LS2X
+	default m
+	help
+	  This is a KMS driver for the display controller in the LS7A1000
+	  bridge chip and LS2K1000 SoC.
+
+	  Note that this driver is different from the loongson KMS
+	  driver (loongson.ko), the loongson KMS driver using TTM
+	  memory manager and its framebuffer is allocated from VRAM.
+	  This driver is based-on CMA and DMA_CMA, its framebuffer
+	  is located from system memory. By default, this driver is
+	  not enabled on LS7A1000 + LS3A3000/LS3A4000 platform.
+	  Pass the following parameter to the kernel commnad line
+	  if you would like to have a try.
+
+	    loongson.enable=0 lsdc.modeset=1
+
+	  If "M" is selected, the module will be called lsdc.
+
+	  If in doubt, say "Y".
+
+config DRM_LSDC_PCI_DRIVER
+	bool "Enable pci device driver support for DC in LS7A1000 Bridge"
+	depends on DRM_LSDC
+	depends on PCI
+	default y
+	help
+	  Choose this if you want to build CMA-base KMS driver
+	  for the display controller in LS7A1000.
+
+	  DRM_LSDC_PCI_DRIVER will be defined on when the dc is a pci device
+
+	  If in doubt, say "Y".

@@ -1,0 +1,17 @@
+#
+# RapidIO master port configuration
+#
+
+config RAPIDIO_TSI721
+	tristate "IDT Tsi721 PCI Express SRIO Controller support"
+	depends on RAPIDIO && PCIEPORTBUS
+	default "n"
+	---help---
+	  Include support for IDT Tsi721 PCI Express Serial RapidIO controller.
+
+config RAPIDIO_LS
+	tristate "Loongson RIO Controller support"
+	depends on RAPIDIO
+	default "n"
+	---help---
+	  Include support for Loongson RapidIO controller.

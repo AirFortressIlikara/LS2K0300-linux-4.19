@@ -1,0 +1,22 @@
+
+config DRM_LOONGSON_VGA
+	tristate "DRM support for loongson chipset and soc"
+	depends on DRM && PCI
+	select FB_SYS_FILLRECT
+	select FB_SYS_COPYAREA
+	select FB_SYS_IMAGEBLIT
+	select DRM_KMS_HELPER
+	select DRM_KMS_FB_HELPER
+	select DRM_TTM
+	select REGMAP_I2C
+	select VIDEOMODE_HELPERS
+	default n
+	help
+	  DRM display driver for loongson vga control.
+
+config DRM_LOONGSON_VGA_PLATFORM
+	bool "use platfrom device"
+	depends on DRM_LOONGSON_VGA && CPU_LOONGSON2K
+	help
+	  This option selects CONFIG_MMU_NOTIFIER if it isn't already
+	  selected to enabled full userptr support.

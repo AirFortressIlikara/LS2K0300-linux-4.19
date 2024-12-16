@@ -1,0 +1,395 @@
+#include <dt-bindings/pinctrl/ls2k300-pinfunc.h>
+&pinctrl{
+	lcd_pin: lcd-pin{
+		lcd_pin_f0: lcd-pin-f0{
+			loongson,pinmux = <&gpa0 0 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		lcd_pin_f1: lcd-pin-f1{
+			loongson,pinmux = <&gpa1 0 11>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+	};
+
+	gmac0_pin: gmac0-pin{
+		gmac0_12bit_f0: gmac0-12bit-f0{
+			loongson,pinmux = <&gpa1 12 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		gmac0_12bit_f1: gmac0-12bit-f1{
+			loongson,pinmux = <&gpa2 0 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		gmac0_16bit_f0: gmac0-16bit-f0{
+			loongson,pinmux = <&gpa2 8 9>;                    /* gmac0_ptp_trig, gmac0_ptp_pps */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		gmac0_16bit_f1: gmac0-16bit-f1{
+			loongson,pinmux = <&gpa4 8 9>;                    /* gmac0_col,gmac0_csr */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+
+	gmac1_pin: gmac1-pin{
+		gmac1_12bit_f0: gmac1-12bit-f0{
+			loongson,pinmux = <&gpa2 12 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		gmac1_12bit_f1: gmac1-12bit-f1{
+			loongson,pinmux = <&gpa3 0 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		gmac1_16bit_f0: gmac1-16bit-f0{
+			loongson,pinmux = <&gpa2 10 11>;		/* gmac1_ptp_trig, gmac1_ptp_pps */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		gmac1_16bit_f1: gmac1-16bit-f1{
+			loongson,pinmux = <&gpa4 10 11>;                    /*gmac1_col,gmac1_csr */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+
+	spi0_pin: spi0-pin{
+		spi0_6bit_f0: spi0_6bit_f0{
+			loongson,pinmux = <&gpa3 8 11>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		spi0_6bit_f1: spi0_6bit_f1{                             /* QSPI0 have four data line  */
+			loongson,pinmux = <&gpa4 5 6>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		spi0_7bit: spi0_7bit{                                   /* SPI0  cs1 */
+			loongson,pinmux = <&gpa4 4 4>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+
+	};
+
+	spi1_pin: spi1-pin{
+		spi1_4bit: spi1-4bit{
+			loongson,pinmux = <&gpa3 12 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		spi1_7bit_f0: spi1-7bit-f0{                             /* SPI1 have four cs */
+			loongson,pinmux = <&gpa4 14 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		spi1_7bit_f1: spi1-7bit-f1{                             /* SPI1 have four cs */
+                        loongson,pinmux = <&gpa5 0 0>;
+                        loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+                };
+
+	};
+
+	spi2_pin: spi2-pin{
+		loongson,pinmux = <&gpa4 0 3>;
+		loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+	};
+
+	spi3_pin: spi3-pin{
+		loongson,pinmux = <&gpa5 2 5>;
+		loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+	};
+
+	pwm0_pin: pwm0-pin{
+		pwm0_mux_m0: pwm0-mux-m0{
+			loongson,pinmux = <&gpa4 0 0>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		pwm0_mux_m1: pwm0-mux-m1{	 			/* pwm0 have two multiplex methods */
+			loongson,pinmux = <&gpa6 6 6>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+	pwm1_pin: pwm1-pin{
+		pwm1_mux_m0: pwm1-mux-m0{
+			loongson,pinmux = <&gpa4 1 1>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		pwm1_mux_m1: pwm1-mux-m1{ 				/* pwm1 have two multiplex methods */
+			loongson,pinmux = <&gpa6 7 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+	pwm2_pin: pwm2-pin{
+		pwm2_mux_m0: pwm2-mux-m0{
+			loongson,pinmux = <&gpa4 2 2>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		pwm2_mux_m1: pwm2-mux-m1{
+			loongson,pinmux = <&gpa6 8 8>;              	/* pwm2 have two multiplex methods */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+
+	pwm3_pin: pwm3-pin{
+		pwm3_mux_m0: pwm3-mux-m0{
+			loongson,pinmux = <&gpa4 3 3>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		pwm3_mux_m1: pwm3-mux-m1{				/* pwm3 have two multiplex methods */
+			loongson,pinmux = <&gpa6 9 9>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+	i2c0_pin: i2c0-pin{
+		i2c0_mux_m0: i2c0-mux-m0{
+			loongson,pinmux = <&gpa3 0 1>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		i2c0_mux_m1: i2c0-mux-m1{                            /* I2C0 have two multiplex methods */
+			loongson,pinmux = <&gpa3 12 13>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+	};
+
+	i2c1_pin: i2c1-pin{
+		i2c1_mux_m0: i2c1-mux-m0{
+			loongson,pinmux = <&gpa3 2 3>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		i2c1_mux_m1: i2c1-mux-m1{                             /* I2C1 have two multiplex methods */
+			loongson,pinmux = <&gpa3 14 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+
+	};
+	
+	i2c2_pin: i2c2-pin{
+		i2c2_mux_m0:i2c2-mux-m0{
+			loongson,pinmux = <&gpa3 4 5>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		i2c2_mux_m1: i2c2-mux-m1{                              /* I2C2 have two multiplex methods */
+			loongson,pinmux = <&gpa5 2 3>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+	
+	i2c3_pin: i2c3-pin{
+   		i2c3_mux_m0: i2c3-mux-m0{
+			loongson,pinmux = <&gpa3 6 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		i2c3_mux_m1: i2c3-mux-m1{                              /* I2C3 have two multiplex methods */
+			loongson,pinmux = <&gpa5 4 5>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+			};
+	};
+
+	uart0_pin: uart0-pin {
+		uart0_2bit_m0: uart0-2bit-m0{
+			loongson,pinmux = <&gpa2 8 9>;                 			/* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		uart0_2bit_m1: uart0-2bit-m1{
+			loongson,pinmux = <&gpa5 12 13>;                 		/* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+
+		uart0_8bit_f0: uart0-8bit-f0{
+			loongson,pinmux = <&gpa3 12 15>;    		/* other 6 bit mux: *rts,cts*/
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		uart0_8bit_f1: uart0-8bit-f1{
+			loongson,pinmux = <&gpa4 0 1>;    		/* other 6 bit mux: *dtr,dcd,ri*/
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+
+	};
+	
+	uart1_pin: uart1-pin {
+		uart1_2bit_m0: uart1-2bit-m0{
+			loongson,pinmux = <&gpa2 10 11>;                /* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		uart1_2bit_m1: uart1-2bit-m1{
+			loongson,pinmux = <&gpa5 14 15>;                 /* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+
+		uart1_8bit: uart1-8bit{
+			loongson,pinmux = <&gpa4 2 7>;    				/* other 6 bit mux: rts,cts,dtr,dcd,ri*/
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+
+	uart2_pin: uart2-pin {
+		uart2_2bit_m0: uart2-2bit-m0{
+			loongson,pinmux = <&gpa2 12 13>;                /* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		uart2_2bit_m1: uart0-2bit-m1{
+			loongson,pinmux = <&gpa6 0 1>;                 /* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+
+	uart3_pin: uart3-pin {
+		uart3_2bit_m0: uart3-2bit-m0{
+			loongson,pinmux = <&gpa2 14 15>;                /* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		uart3_2bit_m1: uart3-2bit-m1{
+			loongson,pinmux = <&gpa6 2 3>;                  /* rx,tx */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+
+	uart4_pin: uart4-pin {
+		uart4_2bit: uart4-2bit{
+			loongson,pinmux = <&gpa3 14 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+
+	uart5_pin: uart5-pin {
+		loongson,pinmux = <&gpa4 0 1>;
+		loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+	};
+
+	uart6_pin: uart6-pin {
+			loongson,pinmux = <&gpa3 12 13>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+	};
+	uart7_pin: uart7-pin {
+			loongson,pinmux = <&gpa4 4 5>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+	};
+
+	uart8_pin: uart8-pin {
+			loongson,pinmux = <&gpa4 6 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+	};
+	uart7_pin: uart7-pin {
+			loongson,pinmux = <&gpa4 4 5>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+	};
+
+	uart8_pin: uart8-pin {
+			loongson,pinmux = <&gpa4 6 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+	};
+
+	uart9_pin: uart9-pin {
+			loongson,pinmux = <&gpa4 2 3>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+	};
+	
+	can0_pin: can0-pin{
+		can0_mux_m0: can0-mux-m0{
+			loongson,pinmux = <&gpa4 4 5>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		can0_mux_m1: can0-mux-m1{
+			loongson,pinmux = <&gpa5 12 13>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+	};
+
+	can1_pin: can1-pin{
+		can1_mux_m0: can1-mux-m0{
+			loongson,pinmux = <&gpa4 6 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		can1_mux_m1: can1-mux-m1{
+			loongson,pinmux = <&gpa5 14 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+
+	};
+
+	can2_pin: can2-pin{
+		can2_mux_m0: can2-mux-m0{
+			loongson,pinmux = <&gpa4 8 9>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		can2_mux_m1: can2-mux-m1{
+			loongson,pinmux = <&gpa6 0 1>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+
+	};
+
+	can3_pin: can3-pin{
+		can3_mux_m0: can3-mux-m0{
+			loongson,pinmux = <&gpa4 10 11>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		can3_mux_m1: can3-mux-m1{
+			loongson,pinmux = <&gpa6 2 3>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+
+	};
+
+	i2s_pin: i2s-pin{
+		i2s_pin_f0: i2s-pin-f0{
+			loongson,pinmux = <&gpa4 12 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		i2s_pin_f1: i2s-pin-f1{
+			loongson,pinmux = <&gpa5 0 0>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};	
+	};
+
+	sdio0_pin: sdio0-pin{
+		sdio0_pin_f0: sdio0-pin-f0{
+				loongson,pinmux = <&gpa5 10 15>;
+				loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		sdio0_pin_f1: sdio0-pin-f1{
+				loongson,pinmux = <&gpa6 0 3>;
+				loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+	};
+
+	sdio1_pin: sdio1-pin{
+		sdio1_6bit: sdio1-6bit{
+			loongson,pinmux = <&gpa6 4 9>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+		sdio1_10bit_m0: sdio1-10bit-m0{
+			loongson,pinmux = <&gpa4 8 11>;			/* sdio1_d[4]-sdio1_d[7] have two multiplex methods */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		sdio1_10bit_m1: sdio1-10bit-m1{
+			loongson,pinmux = <&gpa5 4 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+	};
+
+	lio_pin: lio-pin{
+		lio_27bit_f0: lio-27bit-f0{
+			loongson,pinmux = <&gpa0 1 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		lio_27bit_f1: lio-27bit-f1{
+			loongson,pinmux = <&gpa1 0 11>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		lio_data_8bit: lio-data-8bit{
+			loongson,pinmux = <&gpa2 8 15>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		lio_data_16bit: lio-data_16bit{
+			loongson,pinmux = <&gpa3 0 7>;                  /* defined other 8 bit:lio_data[8]-lio_data[15] */
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+	};
+	touchscreen_pin: touchscreen-pin{
+		touchscreen_m0: touchscreen-m0{
+			loongson,pinmux = <&gpa3 4 5>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONGPIO>;
+		};
+		touchscreen_m1: touchscreen-m1{
+			loongson,pinmux = <&gpa6 7 8>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONGPIO>;
+		};
+	};
+
+};
+
+		
+

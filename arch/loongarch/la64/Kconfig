@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-2.0
+if MACH_LOONGSON64
+
+choice
+	prompt "Machine Type"
+
+config LOONGSON64_GENERIC
+	bool "Generic Loongson 64-bit family machines"
+	select ARCH_SPARSEMEM_ENABLE
+	select ARCH_MIGHT_HAVE_PC_PARPORT
+	select ARCH_MIGHT_HAVE_PC_SERIO
+	select BOOT_ELF32
+	select BOARD_SCACHE
+	select CPU_HAS_WB
+	select HW_HAS_PCI
+	select ISA
+	select HT_PCI
+	select IRQ_LOONGARCH_CPU
+	select NR_CPUS_DEFAULT_4
+	select SPARSE_IRQ
+	select SYS_HAS_CPU_LOONGSON64
+	select SYS_SUPPORTS_SMP
+	select SYS_SUPPORTS_HOTPLUG_CPU
+	select SYS_SUPPORTS_NUMA
+	select SYS_SUPPORTS_64BIT_KERNEL
+	select SYS_SUPPORTS_HIGHMEM
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select ZONE_DMA32
+	select USE_OF
+	help
+	  Generic Loongson 64-bit family machines utilize the Loongson-3A/3B/3C
+	  revision of Loongson processor and LS7A chipset.
+endchoice
+
+endif # MACH_LOONGSON64

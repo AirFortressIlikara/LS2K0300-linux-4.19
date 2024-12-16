@@ -1,0 +1,281 @@
+/dts-v1/;
+/ {
+	model = "loongson,generic";
+	compatible = "loongson,loongson3";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		serial0 = &cpu_uart0;
+		serial1 = &cpu_uart1;
+#if 0
+		spi0 = &spi0;
+#endif
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon";
+	};
+
+	memory {
+		name = "memory";
+		device_type = "memory";
+		reg =  <0 0x00200000 0 0x0ee00000
+			0 0x90000000 0 0x10000000>;
+	};
+#if 0
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x2000000>;
+			linux,cma-default;
+		};
+	};
+#endif
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&cpu0>;
+				};
+			};
+		};
+
+
+		cpu0: cpu@10000 {
+			device_type = "cpu";
+			compatible = "loongarch";
+			reg=<0>;
+			numa-node-id = <0>;
+		};
+
+	};
+
+	cpuic: interrupt-controller {
+		compatible = "loongson,cpu-interrupt-controller";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	icu: interrupt-controller@14001400 {
+		compatible = "loongson,2k500-icu";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		reg = <0 0x14001400 0 0x40
+			0 0x14001040 0 16>;
+		interrupt-parent = <&cpuic>;
+		interrupt-names = "cascade";
+		interrupts = <4>;
+	};
+
+	extioiic: interrupt-controller@0x14001600 {
+		compatible = "loongson,extioi-interrupt-controller";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&cpuic>;
+		interrupts = <3>;
+		interrupt-names = "cascade";
+		vec_count=<128>;
+		misc_func=<0x108>;
+		eio_en_off=<24>;
+	};
+
+	soc {
+		compatible = "ls,nbus", "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges = <0 0x10000000 0 0x10000000 0 0x10000000
+			0 0x2000000  0 0x2000000  0 0x2000000
+			0 0x20000000 0 0x20000000 0 0x10000000
+			0 0x40000000 0 0x40000000 0 0x40000000
+			0xfe 0x00000000 0xfe 0x00000000 0 0x40000000>;
+
+		isa@16400000 {
+			compatible = "isa";
+			#size-cells = <1>;
+			#address-cells = <2>;
+			ranges = <1 0 0 0x16400000 0x4000>;
+		};
+
+		cpu_uart0: serial@0x14200000 {
+			compatible = "ns16550a";
+			reg = <0 0x14200000 0 0x10>;
+			clock-frequency = <100000000>;
+			#interrupt-parent = <&extioiic>;
+			interrupt-parent = <&icu>;
+			interrupts = <0>;
+			no-loopback-test;
+		};
+
+		cpu_uart1: serial@0x14200400 {
+			compatible = "ns16550a";
+			reg = <0 0x14200400 0 0x10>;
+			clock-frequency = <100000000>;
+			#interrupt-parent = <&extioiic>;
+			interrupt-parent = <&icu>;
+			interrupts = <1>;
+			no-loopback-test;
+		};
+
+#if 0
+		/*emmc*/
+		emmc0@0x14210000 {
+			#address-cells = <2>;
+			compatible = "loongson,ls2k_sdio_1.1";
+			reg = <0 0x14210000 0 0x1000>;
+			interrupt-parent = <&icu>;
+			interrupts = <13>;
+			interrupt-names = "ls2k_mci_irq";
+			dma-mask = <0xffffffff 0xffffffff>;
+			clock-frequency = <0 100000000>;
+			bus-width = <8>;
+			cap-mmc-highspeed;
+			no_sd;
+			no_sdio;
+		};
+
+		sdio0@0x14218000 {
+			#address-cells = <2>;
+			compatible = "loongson,ls2k_sdio_1.1";
+			reg = <0 0x14218000 0 0x1000>;
+			interrupt-parent = <&icu>;
+			interrupts = <13>;
+			interrupt-names = "ls2k_mci_irq";
+			clock-frequency = <0 100000000>;
+			dma-mask = <0xffffffff 0xffffffff>;
+			bus-width = <4>;
+			cap-sd-highspeed;
+			no-mmc;
+		};
+#endif
+		gmac0: ethernet@0x14140000 {
+			compatible = "snps,dwmac-3.70a";
+			reg = <0 0x14140000 0 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <18>;
+			interrupt-names = "macirq";
+			mac-address = [ 64 48 48 48 48 60 ];/* [>mac 64:48:48:48:48:60 <]*/
+			phy-mode = "rgmii";
+			bus_id = <0x0>;
+			phy_addr = <0xffffffff>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		gmac1: ethernet@0x14020000 {
+			compatible = "snps,dwmac-3.70a";
+			reg = <0 0x14020000 0 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <22>;
+			interrupt-names = "macirq";
+			mac-address = [ 64 48 48 48 48 61 ];/* [>mac 64:48:48:48:48:61 <]*/
+			phy-mode = "rgmii";
+			bus_id = <0x1>;
+			phy_addr = <0xffffffff>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+#if 1
+		otg@0x14100000 {
+			compatible = "loongson,dwc-otg","dwc-otg","loongson,dwc2";
+			reg = <0 0x14100000 0 0x40000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <39>;
+			dma-mask = <0x0 0xffffffff>;
+		};
+#endif
+		ohci@0x14038000 {
+			compatible = "loongson,ls2k-ohci", "generic-ohci";
+			reg = <0 0x14038000 0 0x8000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <59>;
+			dma-mask = <0x0 0xffffffff>;
+		};
+
+		ehci@0x14030000 {
+			compatible = "loongson,ls2k-ehci", "generic-ehci";
+			reg = <0 0x14030000 0 0x8000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <58>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		spi0: spi@0x14010000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x14010000 0 0x10>;
+			spidev@0 {
+				compatible = "rohm,dh2228fv";
+				spi-max-frequency = <100000000>;
+				reg = <0>;
+			};
+		};
+#if 0 //TODO, new spi ctrl
+		spi1: spi@0x14203000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x14203000 0 0x10>;
+			spi-nocs;
+			status = "disabled";
+		};
+
+		spi2: spi@0x15109000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x15109000 0 0x10>;
+			spi-nocs;
+			status = "disabled";
+		};
+
+		spi3: spi@0x15203000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x15203000 0 0x10>;
+			spi-nocs;
+			status = "disabled";
+		};
+#endif
+#if 0
+		i2c0: i2c@0x14201000 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x14201000 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <4>;
+			eeprom@57 {
+				compatible = "atmel,24c16";
+				reg = <0x57>;
+				pagesize = <16>;
+			};
+			status = "disabled";
+		};
+
+		i2c1: i2c@0x14202800 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x14202800 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <5>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@0x15101000 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x15101000 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <89>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@0x15101800 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x15101800 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <90>;
+			status = "disabled";
+		};
+#endif
+	};
+};

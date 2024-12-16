@@ -1,0 +1,14 @@
+menuconfig I2C_LS
+	tristate "Support LS I2C devices"
+	depends on LOONGARCH
+
+if I2C_LS
+
+config I2C_LS2K300
+	tristate "LOONGSON 2K300 I2C support"
+	help
+	  Enable this option to add support for I2C controller embedded
+	  in LS2K300 SoCs.
+
+	  This driver can also be built as module.
+endif

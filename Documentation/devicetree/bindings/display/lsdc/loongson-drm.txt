@@ -1,0 +1,16 @@
+Loongson display controller
+===========================
+
+Required properties:
+- compatible: Should be "loongson,display-subsystem" or "loongson,ls-fb"
+- reg: should be register base and length
+- interrupts: Should contain the cores interrupt line
+
+example:
+
+lsdc: dc@0x400c0000 {
+	compatible = "loongson,display-subsystem", "loongson,ls-fb";
+	reg = <0x400c0000 0x00010000>;
+	interrupt-parent = <&icu>;
+	interrupts = <36>;
+};

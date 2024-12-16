@@ -1,0 +1,17 @@
+menuconfig CAN_LSCAN
+	tristate "Support LSCAN devices"
+	depends on HAS_IOMEM
+
+if CAN_LSCAN
+
+config CAN_LSCAN_PLATFORM
+	tristate "Generic Platform Bus based LSCAN driver"
+	---help---
+	  This driver adds support for the 2K chips connected to
+	  the "platform bus" (Linux abstraction for directly to the
+	  processor attached devices).  Which can be found on various
+	  boards from Phytec (http://www.phytec.de) like the PCM027,
+	  PCM038. It also provides the OpenFirmware "platform bus" found
+	  on embedded systems with OpenFirmware bindings, e.g. if you
+	  have a PowerPC based system you may want to enable this option.
+endif

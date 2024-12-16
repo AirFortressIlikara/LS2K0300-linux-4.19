@@ -1,0 +1,637 @@
+/*
+ * 2K1000 Device Tree Source for LS2K1000 boards
+ */
+
+#include <dt-bindings/thermal/thermal.h>
+
+/dts-v1/;
+/ {
+	model = "loongson,LS2K1000_L72_MB_VA";
+	compatible = "loongson,ls2k";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "loongson,gs264";
+			reg = <0x0>;
+			loongson,dvfs-vid-points = <
+				/* Node:kHz  DVFS:vid[0:5] */
+				266666  0x11
+				320000  0x10
+				400000  0x01
+				533333  0x00
+				800000  0x00
+				>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "loongson,gs264";
+			reg = <0x1>;
+			loongson,dvfs-vid-points = <
+				/* Node:kHz  DVFS:vid[0:5] */
+				266666  0x11
+				320000  0x10
+				400000  0x01
+				533333  0x11
+				800000  0x11
+				>;
+		};
+	};
+
+	// Since 2K1000 support > 4GiB DIMM, use 2 cell for and address size
+	memory {
+		name = "memory";
+		device_type = "memory";
+		// 238 MB at 2 MB
+		// 496 MB at 512 MB
+		// 2816 MB at 4352MB
+		// total 4G RAM mounted
+		reg = <0x00000000 0x00200000 0x00000000 0x0ee00000
+		       0x00000000 0xc0000000 0x00000000 0xb0000000>;
+	};
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+	};
+	// all soc device use 32bit address
+
+	soc {
+		compatible = "ls,nbus", "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x10000000 0 0x10000000 0x10000000
+			  0x40000000 0 0x40000000 0x40000000
+			  0x20000000 0 0x20000000 0x20000000
+			  0x0d000000 0 0x0d000000 0x02000000>;
+
+		dma-coherent;
+
+		icu: interrupt-controller@1fe11400 {
+			compatible = "loongson,2k1000-iointc";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x1fe11400 0x40>;
+		};
+
+		pctrl:pinctrl@1fe10420 {
+			compatible = "loongson,2k1000-pinctrl";
+			reg = <0x1fe10420 0x18>;
+
+			pwm1_default:pwm1 {
+				mux {
+					groups ="pwm1";
+					function ="pwm1";
+				};
+			};
+
+			pwm0_default:pwm0 {
+				mux {
+					groups ="pwm0";
+					function ="pwm0";
+				};
+			};
+
+			i2c1_default:i2c1 {
+				mux {
+					groups ="i2c1";
+					function ="i2c1";
+				};
+			};
+
+			i2c0_default:i2c0 {
+				mux {
+					groups ="i2c0";
+					function ="i2c0";
+				};
+			};
+
+			hda_default:hda {
+				mux1 {
+					groups ="hda";
+					function ="hda";
+				};
+
+				mux2 {
+					groups ="i2s";
+					function ="gpio";
+				};
+			};
+		};
+
+		pci-msi-controller@1fe114a0 {
+			compatible = "loongson,2k1000-pci-msi";
+			msi-controller;
+			msi-mask = <0xc0 0x40000c00>;
+			reg = <0x1fe114a0 0x60>;
+		};
+
+		ohci@0x40070000 {
+			compatible = "loongson,ls2k-ohci", "usb-ohci";
+			reg = <0x40070000 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <59>;
+			dma-mask = <0x0 0xffffffff>;
+		};
+
+		ehci@0x40060000 {
+			compatible = "loongson,ls2k-ehci", "usb-ehci";
+			reg = <0x40060000 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <58>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		i2c0: i2c@1fe01000 {
+			compatible = "loongson,ls-i2c";
+			reg = <0x1fe01000 0x8>;
+			interrupt-parent = <&icu>;
+			interrupts = <30>;
+
+			pinctrl-0 = <&i2c0_default>;
+			pinctrl-names = "default";
+		};
+
+		i2c1: i2c@1fe01800 {
+			compatible = "loongson,ls-i2c";
+			reg = <0x1fe01800 0x8>;
+			interrupt-parent = <&icu>;
+			interrupts = <31>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pinctrl-0 = <&i2c1_default>;
+			pinctrl-names = "default";
+
+			lt8618sxb@39 {
+				compatible = "lontium,lt8618";
+				/* Transmitter Programming Interface address: 0x72 */
+				reg = <0x39>;
+
+				/* hpd-gpios = <&pioA 0 GPIO_ACTIVE_HIGH>; */
+				/* reset-gpios = <&pioA 39 GPIO_ACTIVE_LOW>; */
+
+				status = "okay";
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+
+						hdmi_encoder_in: endpoint {
+							remote-endpoint = <&dc_out_rgb1>;
+						};
+					};
+
+					port@1 {
+						reg = <1>;
+
+						hdmi_encoder_out: endpoint {
+							remote-endpoint = <&hdmi_connector_in>;
+						};
+					};
+				};
+			};
+		};
+
+		dc@0x400c0000 {
+			compatible = "loongson,display-subsystem";
+			reg = <0x400c0000 0x00010000>;
+			interrupt-parent = <&icu>;
+			interrupts = <36>;
+			dma-mask = <0x00000000 0xffffffff>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					dc_out_rgb0: endpoint {
+						remote-endpoint = <&vga_encoder_in>;
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+					dc_out_rgb1: endpoint {
+						remote-endpoint = <&hdmi_encoder_in>;
+					};
+				};
+			};
+		};
+
+		gpu@0x40080000 {
+			compatible = "vivante,gc";
+			reg = <0x40080000 0x00040000>;
+			interrupt-parent = <&icu>;
+			interrupts = <37>;
+			dma-mask = <0x00000000 0xffffffff>;
+		};
+
+		serial0x@0x1fe00000{
+			device_type = "serial";
+			compatible = "ns16550";
+			reg = <0x1fe00000 0x100>;
+			clock-frequency = <125000000>;
+			interrupt-parent = <&icu>;
+			interrupts = <8>;
+		};
+
+		otg@0x40000000 {
+			compatible = "loongson,ls2k-otg";
+			reg = <0x40000000 0x40000>;
+			interrupt-parent = <&icu>;
+			interrupts = <57>;
+			dma-mask = <0x0 0xffffffff>;
+		};
+
+		ahci@0x400e0000{
+			compatible = "snps,spear-ahci";
+			reg = <0x400e0000 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <27>;
+		};
+
+		rtc0: rtc@1fe07800{
+			compatible = "loongson,ls-rtc";
+			reg = <0x1fe07800 0x100>;
+			interrupt-parent = <&icu>;
+			interrupts = <60>;
+		};
+
+		pwm0: pwm@1fe02000{
+			compatible = "loongson,ls2k-pwm";
+			reg = <0x1fe02000 0x10>;
+			clock-frequency = <125000000>;
+			interrupt-parent = <&icu>;
+			interrupts = <32>;
+			#pwm-cells = <2>;
+			pinctrl-0 = <&pwm1_default>;
+			pinctrl-names = "default";
+		};
+
+		pwm1: pwm@1fe02010{
+			compatible = "loongson,ls2k-pwm";
+			reg = <0x1fe02010 0x10>;
+			clock-frequency = <125000000>;
+			interrupt-parent = <&icu>;
+			interrupts = <33>;
+			#pwm-cells = <2>;
+			pinctrl-0 = <&pwm0_default>;
+			pinctrl-names = "default";
+		};
+
+		/* PWM controller nodes:
+		 * If you want to use the "PWM" function,enable the "PWM"
+		 * controller by configure general configuration register 0.
+		 */
+		/*
+		pwm2: pwm@1fe02020{
+			compatible = "loongson,ls2k-pwm";
+			reg = <0x1fe02020 0x10>;
+			clock-frequency = <125000000>;
+			interrupt-parent = <&icu>;
+			interrupts = <34>;
+			#pwm-cells = <2>;
+		};
+
+		pwm3: pwm@1fe02030{
+			compatible = "loongson,ls2k-pwm";
+			reg = <0x1fe02030 0x10>;
+			clock-frequency = <125000000>;
+			interrupt-parent = <&icu>;
+			interrupts = <35>;
+			#pwm-cells = <2>;
+		};*/
+
+		gmac0: ethernet@0x40040000 {
+			compatible = "snps,dwmac-3.70a", "ls,ls-gmac";
+			reg = <0x40040000 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <20 21>;
+			interrupt-names = "macirq", "eth_wake_irq";
+			/* mac-address = [ 64 48 48 48 48 60  ]; */
+			phy-mode = "rgmii";
+			bus_id = <0x0>;
+			phy_addr = <0xffffffff>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		gmac1: ethernet@0x40050000 {
+			compatible = "snps,dwmac-3.70a", "ls,ls-gmac";
+			reg = <0x40050000 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <22 23>;
+			interrupt-names = "macirq", "eth_wake_irq";
+			/* mac-address = [ 64 48 48 48 48 61  ]; */
+			phy-mode = "rgmii";
+			bus_id = <0x1>;
+			phy_addr = <0xffffffff>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		pioA:gpio@0x1fe10500{
+			compatible = "ls,ls2k-gpio", "ls,ls-gpio";
+			reg = <0x1fe10500 0x38>;
+			ngpios = <64>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pctrl 0 0 15>,
+				      <&pctrl 16 16 15>,
+				      <&pctrl 32 32 10>,
+				      <&pctrl 44 44 20>;
+			interrupt-parent = <&icu>;
+			interrupts =
+				<68>, <69>, <70>, <71>, <66>, <66>,
+				<66>, <66>, <66>, <66>, <66>, <66>,
+				<66>, <66>, <66>, <>,   <66>, <66>,
+				<66>, <66>, <66>, <66>, <66>, <66>,
+				<66>, <66>, <66>, <66>, <66>, <66>,
+				<66>, <66>, <67>, <67>, <67>, <67>,
+				<67>, <>,   <67>, <67>, <67>, <67>,
+				<>,   <>,   <67>, <67>, <67>, <67>,
+				<67>, <67>, <67>, <67>, <67>, <67>,
+				<67>, <67>, <67>, <67>, <67>, <67>,
+				<67>, <67>, <67>, <67>;
+		};
+
+		/* APB DMA controller nodes:
+		 * apbdma node specify the commom property for dma node.
+		 * the #config-nr must be 2,Used to provide APB sel region
+		 * and APB DMA controler information.
+		 */
+		apbdma: apbdma@1fe10438{
+			compatible = "loongson,ls-apbdma";
+			reg = <0x1fe10438 0x8>;
+			#config-nr = <2>;
+		};
+		/* DMA node should specify the apbdma-sel property using a
+		 * phandle to the controller followed by number of APB sel
+		 * region(max 9) and number of APB DMA controller(max 4).
+		*/
+		dma0: dma@1fe10c00 {
+			compatible = "loongson,ls-apbdma-0";
+			reg = <0x1fe10c00 0x8>;
+			apbdma-sel = <&apbdma 0x0 0x0>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+		};
+		dma1: dma@1fe10c10 {
+			compatible = "loongson,ls-apbdma-1";
+			reg = <0x1fe10c10 0x8>;
+			apbdma-sel = <&apbdma 0x5 0x1>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+		};
+		dma2: dma@1fe10c20 {
+			compatible = "loongson,ls-apbdma-2";
+			reg = <0x1fe10c20 0x8>;
+			apbdma-sel = <&apbdma 0x6 0x2>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+		};
+		dma3: dma@1fe10c30 {
+			compatible = "loongson,ls-apbdma-3";
+			reg = <0x1fe10c30 0x8>;
+			apbdma-sel = <&apbdma 0x7 0x3>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+		};
+		dma4: dma@1fe10c40 {
+			compatible = "loongson,ls-apbdma-4";
+			apbdma-sel = <&apbdma 0x0 0x0>;
+			reg = <0x1fe10c40 0x8>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+		};
+
+
+		spi0: spi@1fff0220{
+			compatible = "loongson,ls-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x1fff0220 0x10>;
+			spidev@0{
+				compatible = "rohm,dh2228fv";
+				spi-max-frequency = <100000000>;
+				reg = <0>;
+			};
+		};
+
+
+		hda@0x400d0000 {
+			compatible = "loongson,ls2k-audio";
+			reg = <0x400d0000 0xffff>;
+			interrupt-parent = <&icu>;
+			interrupts = <12>;
+			pinctrl-0 = <&hda_default>;
+			pinctrl-names = "default";
+		};
+
+		tsensor: tsensor@1fe11500 {
+			compatible = "loongson,ls2k-tsensor";
+			reg = <0x1fe11500 0x30>;
+			id = <0>;
+			interrupt-parent = <&icu>;
+			interrupts = <15>;
+			#thermal-sensor-cells = <1>;
+		};
+
+		fan0: pwm-fan {
+			compatible = "pwm-fan";
+			cooling-min-state = <0>;
+			cooling-max-state = <3>;
+			#cooling-cells = <2>;
+			pwms = <&pwm0 0 100000 0>;
+			cooling-levels = <255 153 85 25>;
+		};
+
+		thermal-zones {
+			cpu_thermal: cpu-thermal {
+				polling-delay-passive = <1000>;
+				polling-delay = <5000>;
+				thermal-sensors = <&tsensor 0>;
+
+				trips {
+					cpu_alert: cpu-alert {
+						temperature = <60000>;
+						hysteresis = <5000>;
+						type = "active";
+					};
+
+					cpu_crit: cpu-crit {
+						temperature = <85000>;
+						hysteresis = <5000>;
+						type = "critical";
+					};
+				};
+
+				cooling-maps {
+					map0 {
+						trip = <&cpu_alert>;
+						cooling-device =
+							<&fan0 THERMAL_NO_LIMIT
+							THERMAL_NO_LIMIT>;
+					};
+				};
+			};
+		};
+
+		pcie0_port0@40100000 {
+			compatible = "loongson,ls-pcie";
+			interrupt-parent = <&icu>;
+			interrupts = <40>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x1 0x3>;
+			ranges = <0x2000000 0x0 0x70300000 0x70300000 0x0 0x100000 /* mem */
+				  0x1000000 0x0 0x18008000 0x18008000 0x0 0x1000>; /* io */
+		};
+
+		pcie0_port1@50000000 {
+			compatible = "loongson,ls-pcie";
+			interrupt-parent = <&icu>;
+			interrupts = <41>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x4 0x6>;
+			ranges = <0x2000000 0x0 0x70200000 0x70200000 0x0 0x100000  /* mem */
+				  0x1000000 0x0 0x18007000 0x18007000 0x0 0x1000>;  /* io */
+		};
+
+		pcie0_port2@54000000 {
+			compatible = "loongson,ls-pcie";
+			interrupt-parent = <&icu>;
+			interrupts = <42>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x8 0xa>;
+			ranges = <0x2000000 0x0 0x70100000 0x70100000 0x0 0x100000  /* mem */
+				  0x1000000 0x0 0x18006000 0x18006000 0x0 0x1000>;  /* io */
+		};
+
+		pcie0_port3@58000000 {
+			compatible = "loongson,ls-pcie";
+			interrupt-parent = <&icu>;
+			interrupts = <43>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0xc 0xe>;
+			ranges = <0x2000000 0x0 0x70000000 0x70000000 0x0 0x100000  /* mem */
+				  0x1000000 0x0 0x18005000 0x18005000 0x0 0x1000>;  /* io */
+		};
+
+		pcie1_port0@60000000 {
+			compatible = "loongson,ls-pcie";
+			interrupt-parent = <&icu>;
+			interrupts = <44>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x10 0x12>;
+			ranges = <0x2000000 0x0 0x50000000 0x50000000 0x0 0x20000000 /* mem */
+				  0x1000000 0x0 0x18004000 0x18004000 0x0 0x1000>;   /* io */
+		};
+
+		pcie1_port1@78000000 {
+			compatible = "loongson,ls-pcie";
+			interrupt-parent = <&icu>;
+			interrupts = <45>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x14 0x16>;
+			ranges = <0x2000000 0x0 0x17f00000 0x17f00000 0x0 0x100000  /* mem */
+				  0x1000000 0x0 0x19fff000 0x19fff000 0x0 0x1000>;  /* io */
+		};
+
+		/* CAN controller nodes:
+		 * If you want to use the "can" function,enable the "can"
+		 * controller by configure general configuration register 0.
+		 */
+		/*can0: can@1fe00c00{
+			compatible = "nxp,sja1000";
+			reg = <0x1fe00c00 0xff>;
+			nxp,external-clock-frequency = <125000000>;
+			interrupt-parent = <&icu>;
+			interrupts = <24>;
+		};
+		can1: can@1fe00d00{
+			compatible = "nxp,sja1000";
+			reg = <0x1fe00d00 0xff>;
+			nxp,external-clock-frequency = <125000000>;
+			interrupt-parent = <&icu>;
+			interrupts = <25>;
+		};*/
+	};
+
+	vga-encoder@0 {
+		compatible = "adi,adv7123", "dumb-vga-dac";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				vga_encoder_in: endpoint {
+					remote-endpoint = <&dc_out_rgb0>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				vga_encoder_out: endpoint {
+					remote-endpoint = <&vga_connector_in>;
+				};
+			};
+		};
+	};
+
+	vga-connector@0 {
+		compatible = "vga-connector";
+
+		ddc-i2c-bus = <&i2c0>;
+
+		port {
+			vga_connector_in: endpoint {
+				remote-endpoint = <&vga_encoder_out>;
+			};
+		};
+	};
+
+	hdmi-connector@1 {
+		compatible = "hdmi-connector";
+		type = "hdmi-a";
+		status = "ok";
+
+		port@0 {
+			hdmi_connector_in: endpoint {
+				remote-endpoint = <&hdmi_encoder_out>;
+			};
+		};
+	};
+
+	suspend_to_ram {
+			suspend_addr = <0x1fc00500>;
+	};
+
+};

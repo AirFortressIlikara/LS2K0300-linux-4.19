@@ -1,0 +1,44 @@
+#
+# LOONGARCH Platform Specific Drivers
+#
+
+menuconfig LOONGARCH_PLATFORM_DEVICES
+	bool "LOONGARCH Platform Specific Device Drivers"
+	default y
+	help
+	  Say Y here to get to see options for device drivers of various
+	  LOONGARCH platforms, including vendor-specific netbook/laptop/desktop
+	  extension and hardware monitor drivers. This option itself does
+	  not add any kernel code.
+
+	  If you say N, all options in this submenu will be skipped and disabled.
+
+if LOONGARCH_PLATFORM_DEVICES
+
+config LOONGSON_GENERIC_LAPTOP
+	tristate "Loongson-3A Generic Laptop Driver"
+	depends on LOONGSON64_GENERIC
+	select BACKLIGHT_LCD_SUPPORT
+	select LCD_CLASS_DEVICE
+	select BACKLIGHT_CLASS_DEVICE
+	select POWER_SUPPLY
+	select HWMON
+	select VIDEO_OUTPUT_CONTROL
+	select INPUT_SPARSEKMAP
+	select INPUT_EVDEV
+	select LEDS_CLASS
+	depends on INPUT
+	depends on ACPI
+	default y
+	help
+	  Loongson-3A family laptops generic driver.
+
+config CPU_HWMON
+	tristate "Loongson CPU HWMon Driver"
+	depends on LOONGSON64_GENERIC
+	select HWMON
+	default y
+	help
+	  Loongson-3A/3B CPU Hwmon (temperature sensor) driver.
+
+endif # LOONGARCH_PLATFORM_DEVICES

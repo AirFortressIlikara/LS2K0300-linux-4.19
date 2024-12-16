@@ -1,0 +1,65 @@
+/*
+ * ld.script for compressed kernel support of LoongArch
+ *
+ * Copyright (C) 2009 Lemote Inc.
+ * Author: Wu Zhangjin <wuzhanjing@gmail.com>
+ * Copyright (C) 2010 "Wu Zhangjin" <wuzhanjing@gmail.com>
+ */
+
+/*
+ * Max avaliable Page Size is 64K, so we set SectionAlignment
+ * field of EFI application to 64K.
+ */
+PECOFF_SEGMENT_ALIGN = 0x10000;
+PECOFF_FILE_ALIGN = 0x200;
+
+OUTPUT_ARCH(loongarch)
+ENTRY(start)
+PHDRS {
+	text PT_LOAD FLAGS(7); /* RWX */
+}
+SECTIONS
+{
+	/* Text and read-only data */
+	_text = .;
+	.head.text : {
+		*(.head.text)
+	}
+
+	.text : {
+		*(.text)
+		*(.rodata)
+	}: text
+	/* End of text section */
+
+	.= ALIGN(PECOFF_SEGMENT_ALIGN);
+	_data = .;
+	/* Writable data */
+	.data : {
+		*(.data)
+		/* Put the compressed image here */
+		__image_begin = .;
+		*(.image)
+		__image_end = .;
+		CONSTRUCTORS
+		. = ALIGN(PECOFF_FILE_ALIGN);
+	}
+
+	_edata = .;
+	/* End of data section */
+
+	/* BSS */
+	.bss : {
+		*(.bss)
+	}
+	.= ALIGN(PECOFF_SEGMENT_ALIGN);
+	_end = .;
+
+	/* Sections to be discarded */
+	/DISCARD/ : {
+		*(.LOONGARCH.options)
+		*(.options)
+		*(.comment)
+		*(.note)
+	}
+}

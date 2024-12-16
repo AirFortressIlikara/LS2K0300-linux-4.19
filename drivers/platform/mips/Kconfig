@@ -1,0 +1,121 @@
+#
+# MIPS Platform Specific Drivers
+#
+
+menuconfig MIPS_PLATFORM_DEVICES
+	bool "MIPS Platform Specific Device Drivers"
+	default y
+	help
+	  Say Y here to get to see options for device drivers of various
+	  MIPS platforms, including vendor-specific netbook/laptop/desktop
+	  extension and hardware monitor drivers. This option itself does
+	  not add any kernel code.
+
+	  If you say N, all options in this submenu will be skipped and disabled.
+
+if MIPS_PLATFORM_DEVICES
+
+config CPU_HWMON
+	tristate "Loongson CPU HWMon Driver"
+	depends on LOONGSON_MACH3X
+	select HWMON
+	default y
+	help
+	  Loongson-3A/3B CPU Hwmon (temperature sensor) driver.
+
+config LOONGSON_GENERIC_LAPTOP
+	tristate "Loongson-3A Generic Laptop Driver"
+	depends on LOONGSON_MACH3X
+	select BACKLIGHT_LCD_SUPPORT
+	select LCD_CLASS_DEVICE
+	select BACKLIGHT_CLASS_DEVICE
+	select POWER_SUPPLY
+	select HWMON
+	select VIDEO_OUTPUT_CONTROL
+	select INPUT_SPARSEKMAP
+	select INPUT_EVDEV
+	select LEDS_CLASS
+	depends on INPUT
+	depends on ACPI
+	default y
+	help
+	  Loongson-3A family laptops generic driver.
+
+config LEMOTE3A_LAPTOP
+	tristate "Lemote Loongson-3A Laptop Driver"
+	depends on LOONGSON_MACH3X
+	select BACKLIGHT_LCD_SUPPORT
+	select LCD_CLASS_DEVICE
+	select BACKLIGHT_CLASS_DEVICE
+	select POWER_SUPPLY
+	select HWMON
+	select VIDEO_OUTPUT_CONTROL
+	select INPUT_SPARSEKMAP
+	select INPUT_EVDEV
+	select LEDS_CLASS
+	depends on INPUT
+	default y
+	help
+	  Lemote Loongson-3A/2Gq family laptops driver.
+
+config LOONGSON_CZC_LAPTOP
+        tristate "CZC Laptop pm and hotkey driver"
+        depends on CPU_LOONGSON3
+        select BACKLIGHT_CLASS_DEVICE
+        select LCD_CLASS_DEVICE
+        select BACKLIGHT_LCD_SUPPORT
+        select VIDEO_OUTPUT_CONTROL
+        depends on INPUT
+        select INPUT_SPARSEKMAP
+        select INPUT_EVDEV
+        default y
+        help
+          This is a driver for Loongson laptops, include power and hotkey
+          driver;
+
+config LOONGSON_EA_LAPTOP
+	tristate "PM and Hotkey driver for EA Laptio and Minipc"
+	depends on CPU_LOONGSON3
+	select BACKLIGHT_CLASS_DEVICE
+	select LCD_CLASS_DEVICE
+	select BACKLIGHT_LCD_SUPPORT
+	select VIDEO_OUTPUT_CONTROL
+	depends on INPUT
+	select INPUT_SPARSEKMAP
+	select INPUT_EVDEV
+	default y
+	help
+	  This is a driver for EASCS Loongson laptops, include power and hotkey
+	  driver;
+
+config LOONGSON_BITLAND_PM_HOTKEY
+	tristate "PM and Hotkey driver for Bitland Laptop"
+	depends on CPU_LOONGSON3
+	select BACKLIGHT_CLASS_DEVICE
+	select LCD_CLASS_DEVICE
+	select BACKLIGHT_LCD_SUPPORT
+	select VIDEO_OUTPUT_CONTROL
+	depends on INPUT
+	select INPUT_SPARSEKMAP
+	select INPUT_EVDEV
+	default y
+	---help---
+	  This is a driver for Bitland Loongson laptops, include power and hotkey
+	  driver;
+
+config LOONGSON_3NOD_PM_HOTKEY
+	tristate "PM and Hotkey driver for 3Nod Laptop"
+	depends on CPU_LOONGSON3
+	select BACKLIGHT_CLASS_DEVICE
+	select LCD_CLASS_DEVICE
+	select BACKLIGHT_LCD_SUPPORT
+	select VIDEO_OUTPUT_CONTROL
+	depends on INPUT
+	select INPUT_SPARSEKMAP
+	select INPUT_EVDEV
+	default y
+	---help---
+	  This is a driver for 3Nod Loongson laptops, include power and hotkey
+	  driver;
+
+endif # MIPS_PLATFORM_DEVICES
