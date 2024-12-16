@@ -105,25 +105,6 @@ struct ls_qspi_cmd {
         void *buf;
 };
 
-static struct spretoregs_t
-{
-        unsigned int spre;
-        unsigned short div;
-} spretoregs[] = {
-	{2,0x0},
-	{4,0x1},
-	{16,0x2},
-	{32,0x3},
-	{8,0x4},
-	{64,0x5},
-	{128,0x6},
-	{256,0x7},
-	{512,0x8},
-	{1024,0x9},
-	{2048,0xa},
-	{4096,0xb},
-};
-
 static  inline void qspi_writeb(struct ls_qspi *qspi,unsigned short offset, u8  value)
 {
         writeb(value,qspi->io_base+offset);
@@ -159,28 +140,6 @@ static inline void dump_reg(struct ls_qspi *qspi)
 	printk("CR    :%08x\n",qspi_readb(qspi,QSPI_CR));
 	printk("CSR   :%08x\n",qspi_readb(qspi,QSPI_CSR));
 	printk("SR    :%08x\n",qspi_readb(qspi,QSPI_SR));
-}
-
-static int qspi_setting_spre(const void *key,const void *elt)
-{
-        unsigned long *d = (unsigned long*)key;
-        struct spretoregs_t *b = (struct spretoregs_t *)elt;
-        if(*d > b->spre)
-                return 1;
-        else if(*d < b->spre)
-                return -1;
-        return 0;
-}
-
-static struct spretoregs_t *search_divisor(unsigned int spre)
-{
-        struct spretoregs_t *b = NULL;
-
-        if(spre <= spretoregs[ARRAY_SIZE(spretoregs) - 1].spre)
-                b = (struct spretoregs_t *)bsearch((const void*)&spre,(const void*)spretoregs,ARRAY_SIZE(spretoregs),
-                                                       sizeof(struct spretoregs_t),qspi_setting_spre);
-
-        return b;
 }
 
 static int ls_qspi_wait_nobusy(struct ls_qspi *qspi)
@@ -457,12 +416,13 @@ static int ls_qspi_flash_setup(struct ls_qspi *qspi,
                         SNOR_HWCAPS_READ_FAST |
                         SNOR_HWCAPS_PP,
         };
-        u32 width, presc, cs_num, max_rate = 0;
+
+        u32 width, presc, cs_num, max_rate, bit = 0;
 	u8  setb=0,clrb=0;
 	struct ls_qspi_flash *flash;
         struct mtd_info *mtd;
-        int ret;
-	struct spretoregs_t *st;
+	int ret;
+	const char rdiv[12] = {0, 1, 4, 2, 3, 5, 6, 7, 8, 9, 10, 11};
 
         of_property_read_u32(np, "reg", &cs_num);
         if (cs_num >= LS_MAX_NORCHIP)
@@ -473,12 +433,17 @@ static int ls_qspi_flash_setup(struct ls_qspi *qspi,
                 return -EINVAL;
 
         presc = DIV_ROUND_UP(100000000, max_rate);
-	st = search_divisor(presc);
-	if(st){
-		presc =st->div;
-	}else{
-		return -1;
-	}
+	if (presc < 2)
+		presc = 2;
+
+	if (presc > 4096)
+		presc = 4096;
+
+	bit = fls(presc) - 1;
+	if ((1<<bit) == presc)
+		bit--;
+
+	presc = rdiv[bit];
 
         if (of_property_read_u32(np, "spi-rx-bus-width", &width))
                 width = 1;
@@ -517,13 +482,11 @@ static int ls_qspi_flash_setup(struct ls_qspi *qspi,
 	clrb |= QSPI_CSR_CLK_DIV_MASK;
 	qspi_writeb(qspi,QSPI_CSR,qspi_readb(qspi,QSPI_CSR) &~clrb |setb);
 
-
 	ret = spi_nor_scan(&flash->nor, NULL, &hwcaps);
 	if(ret) {
 		dev_err(qspi->dev, "device scan failed\n");
 		return ret;
 	}
-
 
 	ret = mtd_device_register(mtd, NULL, 0);
 	if (ret) {

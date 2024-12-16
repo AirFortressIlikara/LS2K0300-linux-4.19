@@ -635,8 +635,9 @@
 			bus-width = <8>;
 
 			cap-mmc-highspeed;
-			no_sd;
-			no_sdio;
+			no-sd;
+			no-sdio;
+			non-removable;
 			dma-mask = <0xffffffff 0xffffffff>;
 		};
 #if 0

@@ -378,6 +378,7 @@
 			mmc-hs200-1_8v;
 			no-sd;
 			no-sdio;
+			non-removable;
 		};
 
 		sdio1: sdio1@0x16148000 {

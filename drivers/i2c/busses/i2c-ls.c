@@ -455,7 +455,10 @@ static int ls_i2c_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg msgs[],
 		writel(0,i2c_dev->base + I2C_CR1);
 		msleep(5);
 		i2c_set_bits(i2c_dev->base + I2C_CR1, I2C_CR1_PE);
-		ls_bus_reset(i2c_dev);
+		if((readl(i2c_dev->base + I2C_SR2)&0x1))
+			i2c_set_bits(i2c_dev->base + I2C_CR1,I2C_CR1_STOP);
+		else
+			ls_bus_reset(i2c_dev);
 		return ret;
 	}
 	/* START generation */
@@ -465,7 +468,7 @@ static int ls_i2c_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg msgs[],
 		ret = ls_i2c_xfer_msg(i2c_dev, &msgs[i], i == num - 1);
 
 	if(ret<0){
-		dev_err(i2c_dev->dev,"i2c transfer err\n");
+		dev_err(i2c_dev->dev,"i2c transfer err,ret is %d\n",ret);
 		writel(0x8000,i2c_dev->base + I2C_CR1);
 		msleep(5);
 		writel(0,i2c_dev->base + I2C_CR1);
