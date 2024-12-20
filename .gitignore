@@ -19,6 +19,9 @@
 *.dtb.S
 *.dwo
 *.elf
+!i2c-ls.elf
+!lscan_olddma.elf
+!lscan_platform.elf
 *.gcno
 *.gz
 *.i
