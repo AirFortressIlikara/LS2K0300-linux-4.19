@@ -16,7 +16,7 @@
 };
 
 &cpu_uart1{
-    status = "okay";
+    status = "disabled";
     pinctrl-names = "default";
     pinctrl-0 = <&uart1_2bit_m0>;
 };
@@ -50,13 +50,13 @@
 };
 
 &can2{
-    status = "okay";
+    status = "disabled";
     pinctrl-names = "default";
     pinctrl-0 = <&can2_mux_m0>;
 };
 
 &can3{
-    status = "okay";
+    status = "disabled";
     pinctrl-names = "default";
     pinctrl-0 = <&can3_mux_m0>;
 };
