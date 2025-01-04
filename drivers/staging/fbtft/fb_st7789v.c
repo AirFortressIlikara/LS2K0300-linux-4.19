@@ -16,9 +16,9 @@
 
 #define DRVNAME "fb_st7789v"
 
-#define DEFAULT_GAMMA \
-	"70 2C 2E 15 10 09 48 33 53 0B 19 18 20 25\n" \
-	"70 2C 2E 15 10 09 48 33 53 0B 19 18 20 25"
+#define DEFAULT_GAMMA                                                          \
+	"D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23\n"                          \
+	"D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23"
 
 /**
  * enum st7789v_command - ST7789V display controller commands
@@ -119,6 +119,8 @@ static int init_display(struct fbtft_par *par)
 	 */
 	write_reg(par, PWCTRL1, 0xA4, 0xA1);
 
+	write_reg(par, 0x21);
+
 	write_reg(par, MIPI_DCS_SET_DISPLAY_ON);
 	return 0;
 }
@@ -201,12 +203,11 @@ static int set_gamma(struct fbtft_par *par, u32 *curves)
 		c = i * par->gamma.num_values;
 		for (j = 0; j < par->gamma.num_values; j++)
 			curves[c + j] &= gamma_par_mask[j];
-		write_reg(par, PVGAMCTRL + i,
-			  curves[c + 0],  curves[c + 1],  curves[c + 2],
-			  curves[c + 3],  curves[c + 4],  curves[c + 5],
-			  curves[c + 6],  curves[c + 7],  curves[c + 8],
-			  curves[c + 9],  curves[c + 10], curves[c + 11],
-			  curves[c + 12], curves[c + 13]);
+		write_reg(par, PVGAMCTRL + i, curves[c + 0], curves[c + 1],
+			  curves[c + 2], curves[c + 3], curves[c + 4],
+			  curves[c + 5], curves[c + 6], curves[c + 7],
+			  curves[c + 8], curves[c + 9], curves[c + 10],
+			  curves[c + 11], curves[c + 12], curves[c + 13]);
 	}
 	return 0;
 }
