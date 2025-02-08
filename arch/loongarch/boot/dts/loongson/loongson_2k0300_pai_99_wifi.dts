@@ -108,6 +108,13 @@
         32 20 00 05 14 14 1A 14 8B 2B 00
         ];
     };
+    
+    vl53l0x: vl53l0x@29 {
+        compatible = "st,stmvl53l0";
+        reg = <0x29>;
+
+        status = "okay";
+    };
 };
 
 &i2c1{

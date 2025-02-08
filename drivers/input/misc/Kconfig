@@ -851,4 +851,15 @@ config INPUT_SC27XX_VIBRA
 	  To compile this driver as a module, choose M here. The module will
 	  be called sc27xx_vibra.
 
+config STMVL53L0X
+	tristate "ST VL53L0x haptics support"
+	depends on INPUT && I2C
+	select INPUT_FF_MEMLESS
+	select REGMAP_I2C
+	help
+	  Say Y to enable support for the ST VL53L0x haptics driver.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called vl53l0x-haptics.
+
 endif
