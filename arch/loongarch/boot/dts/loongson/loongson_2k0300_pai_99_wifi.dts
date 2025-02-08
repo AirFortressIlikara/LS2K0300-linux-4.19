@@ -177,11 +177,11 @@
         compatible = "sitronix,st7735r";
         buswidth = <8>;
         rotate = <90>;
-        fps = <30>;
+        fps = <50>;
         rgb;
         dc-gpios = <&gpa3 3 GPIO_ACTIVE_HIGH>;
         reset-gpios = <&gpa3 2 GPIO_ACTIVE_HIGH>;
-        spi-max-frequency = <32000000>;
+        spi-max-frequency = <100000000>;
         reg = <0>;
         debug = <0>;
     };
