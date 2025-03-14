@@ -22,6 +22,8 @@
 #include <linux/pwm.h>
 #include <linux/of_device.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
+#include <linux/iopoll.h>
 
 /* counter offest */
 #define LOW_BUFFER  0x004
@@ -53,6 +55,41 @@ struct ls_pwm_chip{
 	u32	full_buffer_reg;
 	u64	clock_frequency;
 };
+
+static int pwm_loongson_capture(struct pwm_chip *chip, struct pwm_device *pwm,
+				struct pwm_capture *result,
+				unsigned long timeout)
+{
+	u32 val;
+	struct ls_pwm_chip *ls_pwm = to_ls_pwm_chip(chip);
+	int ret;
+
+	writel(0, ls_pwm->mmio_base + FULL_BUFFER);
+
+	val = readl(ls_pwm->mmio_base + CTRL);
+	val |= CTRL_EN | CTRL_CAPTE | CTRL_OE;
+	writel(val, ls_pwm->mmio_base + CTRL);
+	ret = readl_poll_timeout(ls_pwm->mmio_base + FULL_BUFFER, val, val, 10,
+				 timeout * 1000);
+	if (ret < 0)
+		return -ETIMEDOUT;
+
+	usleep_range(val * 4 / 100 + 1, val * 4 / 100 + 2);
+
+	val = readl(ls_pwm->mmio_base + FULL_BUFFER);
+	result->period =
+		DIV64_U64_ROUND_UP((u64)val * NSEC_PER_SEC, ls_pwm->clock_frequency);
+
+	val = readl(ls_pwm->mmio_base + LOW_BUFFER);
+	result->duty_cycle =
+		DIV64_U64_ROUND_UP((u64)val * NSEC_PER_SEC, ls_pwm->clock_frequency);
+
+	val = readl(ls_pwm->mmio_base + CTRL);
+	val &= ~(CTRL_EN | CTRL_CAPTE | CTRL_OE);
+	writel(val, ls_pwm->mmio_base + CTRL);
+
+	return 0;
+}
 
 static int ls_pwm_set_polarity(struct pwm_chip *chip,
                                struct pwm_device *pwm,
@@ -176,6 +213,7 @@ static const struct pwm_ops ls_pwm_ops = {
 	.enable = ls_pwm_enable,
 	.disable = ls_pwm_disable,
 	.get_state = ls_pwm_get_state,
+	.capture = pwm_loongson_capture,
 	.owner = THIS_MODULE,
 };
 static irqreturn_t pwm_ls2x_isr(int irq, void *dev)
