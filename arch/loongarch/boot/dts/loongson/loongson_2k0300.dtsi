@@ -563,22 +563,57 @@
             };
         };
         
-        pwm_atim: pwm@16118000{
-            compatible = "loongson,ls300-pwm-atim";
+        timers1: timer@16118000 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            compatible = "loongson,loongson-timers";
             reg = <0 0x16118000 0 0x1000>;
-            clock-frequency = <100000000>;
-            #pwm-cells = <2>;
-            
+            interrupt-parent = <&icu>;
+            interrupts = <13>;
+            dmas = <&dma 0 0x400>,
+            <&dma 1 0x400>,
+            <&dma 2 0x400>,
+            <&dma 3 0x400>,
+            <&dma 4 0x400>,
+            <&dma 5 0x400>,
+            <&dma 6 0x400>;
+            dma-names = "ch1", "ch2", "ch3", "ch4", "com", "up", "trig";
+            pinctrl-0 = <&atim3_pin_m1>, <&atim3n_pin_m1>;
+            pinctrl-names = "default";
+            clock-frequency = <200000000>;
             status = "disabled";
+            
+            pwm {
+                compatible = "loongson,ls2k-pwm-timer";
+                #pwm-cells = <2>;
+                status = "disabled";
+            };
         };
         
-        pwm_gtim: pwm@16119000{
-            compatible = "loongson,ls300-pwm-gtim";
+        timers2: timer@16119000 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            compatible = "loongson,loongson-timers";
             reg = <0 0x16119000 0 0x1000>;
-            clock-frequency = <100000000>;
-            #pwm-cells = <2>;
-            
+            interrupt-parent = <&icu>;
+            interrupts = <14>;
+            dmas = <&dma 0 0x400>,
+            <&dma 1 0x400>,
+            <&dma 2 0x400>,
+            <&dma 3 0x400>,
+            <&dma 5 0x400>,
+            <&dma 6 0x400>;
+            dma-names = "ch1", "ch2", "ch3", "ch4", "up", "trig";
+            pinctrl-0 = <&gtim2_pin_m1>, <&gtim3_pin_m1>;
+            pinctrl-names = "default";
+            clock-frequency = <200000000>;
             status = "disabled";
+            
+            pwm {
+                compatible = "loongson,ls2k-pwm-timer";
+                #pwm-cells = <2>;
+                status = "disabled";
+            };
         };
         
         pwm0: pwm@1611b000{

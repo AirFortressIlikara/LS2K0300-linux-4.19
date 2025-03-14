@@ -52,5 +52,4 @@ obj-$(CONFIG_PWM_TWL_LED)	+= pwm-twl-led.o
 obj-$(CONFIG_PWM_VT8500)	+= pwm-vt8500.o
 obj-$(CONFIG_PWM_ZX)		+= pwm-zx.o
 obj-$(CONFIG_PWM_LS)		+= pwm-ls.o
-obj-$(CONFIG_PWM_LS_GTIM)	+= pwm-ls-gtim.o
-obj-$(CONFIG_PWM_LS_ATIM)	+= pwm-ls-atim.o
+obj-$(CONFIG_PWM_LOONGSON_TIMER)		+= pwm-ls-timer.o

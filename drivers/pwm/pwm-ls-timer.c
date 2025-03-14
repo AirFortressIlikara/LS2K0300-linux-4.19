@@ -6,62 +6,53 @@
  *
  * Inspired by timer-stm32.c from Maxime Coquelin
  *             pwm-atmel.c from Bo Shen
+ * 
+ * Copyright (C) 2025 Ilikara <3435193369@qq.com>
+ * Modified by: Ilikara <3435193369@qq.com>
  */
 
 #include <linux/bitfield.h>
-#include <linux/mfd/stm32-timers.h>
+#include <linux/mfd/loongson-timers.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/pwm.h>
 
 #define CCMR_CHANNEL_SHIFT 8
-#define CCMR_CHANNEL_MASK  0xFF
+#define CCMR_CHANNEL_MASK 0xFF
 #define MAX_BREAKINPUT 2
 
-struct stm32_pwm {
-	struct pwm_chip chip;
-	struct mutex lock; /* protect pwm config/enable */
-	struct clk *clk;
-	struct regmap *regmap;
-	u32 max_arr;
-	bool have_complementary_output;
-	u32 capture[4] ____cacheline_aligned; /* DMA'able buffer */
-};
-
-struct stm32_breakinput {
+struct loongson_breakinput {
 	u32 index;
 	u32 level;
 	u32 filter;
 };
 
-static inline struct stm32_pwm *to_stm32_pwm_dev(struct pwm_chip *chip)
+struct loongson_pwm {
+	struct pwm_chip chip;
+	struct mutex lock; /* protect pwm config/enable */
+	u64	clock_frequency;
+	struct regmap *regmap;
+	u32 max_arr;
+	bool have_complementary_output;
+	struct loongson_breakinput breakinputs[MAX_BREAKINPUT];
+	unsigned int num_breakinputs;
+	u32 capture[6] ____cacheline_aligned; /* DMA'able buffer */
+};
+
+static inline struct loongson_pwm *to_loongson_pwm_dev(struct pwm_chip *chip)
 {
-	return container_of(chip, struct stm32_pwm, chip);
+	return container_of(chip, struct loongson_pwm, chip);
 }
 
-static u32 active_channels(struct stm32_pwm *dev)
+static u32 active_channels(struct loongson_pwm *dev)
 {
 	u32 ccer;
 
 	regmap_read(dev->regmap, TIM_CCER, &ccer);
 
 	return ccer & TIM_CCER_CCXE;
-}
-
-static int write_ccrx(struct stm32_pwm *dev, int ch, u32 value)
-{
-	switch (ch) {
-	case 0:
-		return regmap_write(dev->regmap, TIM_CCR1, value);
-	case 1:
-		return regmap_write(dev->regmap, TIM_CCR2, value);
-	case 2:
-		return regmap_write(dev->regmap, TIM_CCR3, value);
-	case 3:
-		return regmap_write(dev->regmap, TIM_CCR4, value);
-	}
-	return -EINVAL;
 }
 
 #define TIM_CCER_CC12P (TIM_CCER_CC1P | TIM_CCER_CC2P)
@@ -102,21 +93,24 @@ static int write_ccrx(struct stm32_pwm *dev, int ch, u32 value)
  * - Period     = t2 - t0
  * - Duty cycle = t1 - t0
  */
-static int stm32_pwm_raw_capture(struct stm32_pwm *priv, struct pwm_device *pwm,
-				 unsigned long tmo_ms, u32 *raw_prd,
-				 u32 *raw_dty)
+static int loongson_pwm_raw_capture(struct pwm_chip *chip,
+				    struct pwm_device *pwm,
+				    unsigned long tmo_ms, u32 *raw_prd,
+				    u32 *raw_dty)
 {
+	struct loongson_pwm *priv = to_loongson_pwm_dev(chip);
 	struct device *parent = priv->chip.dev->parent;
-	enum stm32_timers_dmas dma_id;
+	enum loongson_timers_dmas dma_id;
 	u32 ccen, ccr;
 	int ret;
+	u32 capture[4];
 
 	/* Ensure registers have been updated, enable counter and capture */
 	regmap_update_bits(priv->regmap, TIM_EGR, TIM_EGR_UG, TIM_EGR_UG);
 	regmap_update_bits(priv->regmap, TIM_CR1, TIM_CR1_CEN, TIM_CR1_CEN);
 
 	/* Use cc1 or cc3 DMA resp for PWM input channels 1 & 2 or 3 & 4 */
-	dma_id = pwm->hwpwm < 2 ? STM32_TIMERS_DMA_CH1 : STM32_TIMERS_DMA_CH3;
+	dma_id = pwm->hwpwm < 2 ? LS_TIMERS_DMA_CH1 : LS_TIMERS_DMA_CH3;
 	ccen = pwm->hwpwm < 2 ? TIM_CCER_CC12E : TIM_CCER_CC34E;
 	ccr = pwm->hwpwm < 2 ? TIM_CCR1 : TIM_CCR3;
 	regmap_update_bits(priv->regmap, TIM_CCER, ccen, ccen);
@@ -127,24 +121,28 @@ static int stm32_pwm_raw_capture(struct stm32_pwm *priv, struct pwm_device *pwm,
 	 * We'll get two capture snapchots: { CCR1, CCR2 }, { CCR1, CCR2 }
 	 * or { CCR3, CCR4 }, { CCR3, CCR4 }
 	 */
-	ret = stm32_timers_dma_burst_read(parent, priv->capture, dma_id, ccr, 2,
-					  2, tmo_ms);
+	ret = loongson_timers_dma_burst_read(parent, priv->capture, dma_id, ccr,
+					     2, 3, tmo_ms);
 	if (ret)
 		goto stop;
+	capture[0] = priv->capture[1];
+	capture[1] = priv->capture[4];
+	capture[2] = priv->capture[2];
+	capture[3] = priv->capture[5];
 
 	/* Period: t2 - t0 (take care of counter overflow) */
-	if (priv->capture[0] <= priv->capture[2])
-		*raw_prd = priv->capture[2] - priv->capture[0];
+	if (capture[0] <= capture[2])
+		*raw_prd = capture[2] - capture[0];
 	else
-		*raw_prd = priv->max_arr - priv->capture[0] + priv->capture[2];
+		*raw_prd = priv->max_arr - capture[0] + capture[2];
 
 	/* Duty cycle capture requires at least two capture units */
 	if (pwm->chip->npwm < 2)
 		*raw_dty = 0;
-	else if (priv->capture[0] <= priv->capture[3])
-		*raw_dty = priv->capture[3] - priv->capture[0];
+	else if (capture[0] <= capture[3])
+		*raw_dty = capture[3] - capture[0];
 	else
-		*raw_dty = priv->max_arr - priv->capture[0] + priv->capture[3];
+		*raw_dty = priv->max_arr - capture[0] + capture[3];
 
 	if (*raw_dty > *raw_prd) {
 		/*
@@ -163,10 +161,10 @@ stop:
 	return ret;
 }
 
-static int stm32_pwm_capture(struct pwm_chip *chip, struct pwm_device *pwm,
-			     struct pwm_capture *result, unsigned long tmo_ms)
+static int loongson_pwm_capture(struct pwm_chip *chip, struct pwm_device *pwm,
+				struct pwm_capture *result, unsigned long tmo_ms)
 {
-	struct stm32_pwm *priv = to_stm32_pwm_dev(chip);
+	struct loongson_pwm *priv = to_loongson_pwm_dev(chip);
 	unsigned long long prd, div, dty;
 	unsigned long rate;
 	unsigned int psc = 0, icpsc, scale;
@@ -180,17 +178,7 @@ static int stm32_pwm_capture(struct pwm_chip *chip, struct pwm_device *pwm,
 		goto unlock;
 	}
 
-	ret = clk_enable(priv->clk);
-	if (ret) {
-		dev_err(priv->chip.dev, "failed to enable counter clock\n");
-		goto unlock;
-	}
-
-	rate = clk_get_rate(priv->clk);
-	if (!rate) {
-		ret = -EINVAL;
-		goto clk_dis;
-	}
+	rate = priv->clock_frequency;
 
 	/* prescaler: fit timeout window provided by upper layer */
 	div = (unsigned long long)rate * (unsigned long long)tmo_ms;
@@ -204,19 +192,22 @@ static int stm32_pwm_capture(struct pwm_chip *chip, struct pwm_device *pwm,
 	regmap_write(priv->regmap, TIM_ARR, priv->max_arr);
 	regmap_write(priv->regmap, TIM_PSC, psc);
 
+	/* Reset input selector to its default input and disable slave mode */
+	regmap_write(priv->regmap, TIM_SMCR, 0x0);
+
 	/* Map TI1 or TI2 PWM input to IC1 & IC2 (or TI3/4 to IC3 & IC4) */
-	regmap_update_bits(priv->regmap,
-			   pwm->hwpwm < 2 ? TIM_CCMR1 : TIM_CCMR2,
-			   TIM_CCMR_CC1S | TIM_CCMR_CC2S, pwm->hwpwm & 0x1 ?
-			   TIM_CCMR_CC1S_TI2 | TIM_CCMR_CC2S_TI2 :
-			   TIM_CCMR_CC1S_TI1 | TIM_CCMR_CC2S_TI1);
+	regmap_update_bits(priv->regmap, pwm->hwpwm < 2 ? TIM_CCMR1 : TIM_CCMR2,
+			   TIM_CCMR_CC1S | TIM_CCMR_CC2S,
+			   pwm->hwpwm & 0x1 ?
+				   TIM_CCMR_CC1S_TI2 | TIM_CCMR_CC2S_TI2 :
+				   TIM_CCMR_CC1S_TI1 | TIM_CCMR_CC2S_TI1);
 
 	/* Capture period on IC1/3 rising edge, duty cycle on IC2/4 falling. */
-	regmap_update_bits(priv->regmap, TIM_CCER, pwm->hwpwm < 2 ?
-			   TIM_CCER_CC12P : TIM_CCER_CC34P, pwm->hwpwm < 2 ?
-			   TIM_CCER_CC2P : TIM_CCER_CC4P);
+	regmap_update_bits(priv->regmap, TIM_CCER,
+			   pwm->hwpwm < 2 ? TIM_CCER_CC12P : TIM_CCER_CC34P,
+			   pwm->hwpwm < 2 ? TIM_CCER_CC2P : TIM_CCER_CC4P);
 
-	ret = stm32_pwm_raw_capture(priv, pwm, tmo_ms, &raw_prd, &raw_dty);
+	ret = loongson_pwm_raw_capture(chip, pwm, tmo_ms, &raw_prd, &raw_dty);
 	if (ret)
 		goto stop;
 
@@ -237,8 +228,8 @@ static int stm32_pwm_capture(struct pwm_chip *chip, struct pwm_device *pwm,
 		/* 2nd measure with new scale */
 		psc /= scale;
 		regmap_write(priv->regmap, TIM_PSC, psc);
-		ret = stm32_pwm_raw_capture(priv, pwm, tmo_ms, &raw_prd,
-					    &raw_dty);
+		ret = loongson_pwm_raw_capture(chip, pwm, tmo_ms, &raw_prd,
+					       &raw_dty);
 		if (ret)
 			goto stop;
 	}
@@ -263,9 +254,9 @@ static int stm32_pwm_capture(struct pwm_chip *chip, struct pwm_device *pwm,
 			   pwm->hwpwm < 2 ? TIM_CCMR1 : TIM_CCMR2,
 			   TIM_CCMR_IC1PSC | TIM_CCMR_IC2PSC,
 			   FIELD_PREP(TIM_CCMR_IC1PSC, icpsc) |
-			   FIELD_PREP(TIM_CCMR_IC2PSC, icpsc));
+				   FIELD_PREP(TIM_CCMR_IC2PSC, icpsc));
 
-	ret = stm32_pwm_raw_capture(priv, pwm, tmo_ms, &raw_prd, &raw_dty);
+	ret = loongson_pwm_raw_capture(chip, pwm, tmo_ms, &raw_prd, &raw_dty);
 	if (ret)
 		goto stop;
 
@@ -309,22 +300,21 @@ stop:
 	regmap_write(priv->regmap, pwm->hwpwm < 2 ? TIM_CCMR1 : TIM_CCMR2, 0);
 	regmap_write(priv->regmap, TIM_PSC, 0);
 clk_dis:
-	clk_disable(priv->clk);
 unlock:
 	mutex_unlock(&priv->lock);
 
 	return ret;
 }
 
-static int stm32_pwm_config(struct stm32_pwm *priv, int ch,
-			    int duty_ns, int period_ns)
+static int loongson_pwm_config(struct loongson_pwm *priv, int ch, u64 duty_ns,
+			       u64 period_ns)
 {
 	unsigned long long prd, div, dty;
 	unsigned int prescaler = 0;
 	u32 ccmr, mask, shift;
 
 	/* Period and prescaler values depends on clock rate */
-	div = (unsigned long long)clk_get_rate(priv->clk) * period_ns;
+	div = (unsigned long long)priv->clock_frequency * period_ns;
 
 	do_div(div, NSEC_PER_SEC);
 	prd = div;
@@ -362,7 +352,7 @@ static int stm32_pwm_config(struct stm32_pwm *priv, int ch,
 	dty = prd * duty_ns;
 	do_div(dty, period_ns);
 
-	write_ccrx(priv, ch, dty);
+	regmap_write(priv->regmap, TIM_CCRx(ch + 1), dty);
 
 	/* Configure output mode */
 	shift = (ch & 0x1) * CCMR_CHANNEL_SHIFT;
@@ -375,20 +365,20 @@ static int stm32_pwm_config(struct stm32_pwm *priv, int ch,
 		regmap_update_bits(priv->regmap, TIM_CCMR2, mask, ccmr);
 
 	regmap_update_bits(priv->regmap, TIM_BDTR,
-			   TIM_BDTR_MOE | TIM_BDTR_AOE,
-			   TIM_BDTR_MOE | TIM_BDTR_AOE);
+		TIM_BDTR_MOE | TIM_BDTR_AOE,
+		TIM_BDTR_MOE | TIM_BDTR_AOE);
 
 	return 0;
 }
 
-static int stm32_pwm_set_polarity(struct stm32_pwm *priv, int ch,
-				  enum pwm_polarity polarity)
+static int loongson_pwm_set_polarity(struct loongson_pwm *priv, unsigned int ch,
+				     enum pwm_polarity polarity)
 {
 	u32 mask;
 
-	mask = TIM_CCER_CC1P << (ch * 4);
+	mask = TIM_CCER_CCxP(ch + 1);
 	if (priv->have_complementary_output)
-		mask |= TIM_CCER_CC1NP << (ch * 4);
+		mask |= TIM_CCER_CCxNP(ch + 1);
 
 	regmap_update_bits(priv->regmap, TIM_CCER, mask,
 			   polarity == PWM_POLARITY_NORMAL ? 0 : mask);
@@ -396,19 +386,15 @@ static int stm32_pwm_set_polarity(struct stm32_pwm *priv, int ch,
 	return 0;
 }
 
-static int stm32_pwm_enable(struct stm32_pwm *priv, int ch)
+static int loongson_pwm_enable(struct loongson_pwm *priv, unsigned int ch)
 {
 	u32 mask;
 	int ret;
 
-	ret = clk_enable(priv->clk);
-	if (ret)
-		return ret;
-
 	/* Enable channel */
-	mask = TIM_CCER_CC1E << (ch * 4);
+	mask = TIM_CCER_CCxE(ch + 1);
 	if (priv->have_complementary_output)
-		mask |= TIM_CCER_CC1NE << (ch * 4);
+		mask |= TIM_CCER_CCxNE(ch + 1);
 
 	regmap_update_bits(priv->regmap, TIM_CCER, mask, mask);
 
@@ -421,89 +407,86 @@ static int stm32_pwm_enable(struct stm32_pwm *priv, int ch)
 	return 0;
 }
 
-static void stm32_pwm_disable(struct stm32_pwm *priv, int ch)
+static void loongson_pwm_disable(struct loongson_pwm *priv, unsigned int ch)
 {
 	u32 mask;
 
 	/* Disable channel */
-	mask = TIM_CCER_CC1E << (ch * 4);
+	mask = TIM_CCER_CCxE(ch + 1);
 	if (priv->have_complementary_output)
-		mask |= TIM_CCER_CC1NE << (ch * 4);
+		mask |= TIM_CCER_CCxNE(ch + 1);
 
 	regmap_update_bits(priv->regmap, TIM_CCER, mask, 0);
 
 	/* When all channels are disabled, we can disable the controller */
 	if (!active_channels(priv))
 		regmap_update_bits(priv->regmap, TIM_CR1, TIM_CR1_CEN, 0);
-
-	clk_disable(priv->clk);
 }
 
-static int stm32_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
-			   struct pwm_state *state)
+static int loongson_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
+			      struct pwm_state *state)
 {
 	bool enabled;
-	struct stm32_pwm *priv = to_stm32_pwm_dev(chip);
+	struct loongson_pwm *priv = to_loongson_pwm_dev(chip);
 	int ret;
 
 	enabled = pwm->state.enabled;
 
-	if (enabled && !state->enabled) {
-		stm32_pwm_disable(priv, pwm->hwpwm);
+	if (!state->enabled) {
+		if (enabled)
+			loongson_pwm_disable(priv, pwm->hwpwm);
 		return 0;
 	}
 
 	if (state->polarity != pwm->state.polarity)
-		stm32_pwm_set_polarity(priv, pwm->hwpwm, state->polarity);
+		loongson_pwm_set_polarity(priv, pwm->hwpwm, state->polarity);
 
-	ret = stm32_pwm_config(priv, pwm->hwpwm,
-			       state->duty_cycle, state->period);
+	ret = loongson_pwm_config(priv, pwm->hwpwm, state->duty_cycle,
+				  state->period);
 	if (ret)
 		return ret;
 
 	if (!enabled && state->enabled)
-		ret = stm32_pwm_enable(priv, pwm->hwpwm);
+		ret = loongson_pwm_enable(priv, pwm->hwpwm);
 
 	return ret;
 }
 
-static int stm32_pwm_apply_locked(struct pwm_chip *chip, struct pwm_device *pwm,
-				  struct pwm_state *state)
+static int loongson_pwm_apply_locked(struct pwm_chip *chip,
+				     struct pwm_device *pwm,
+				     struct pwm_state *state)
 {
-	struct stm32_pwm *priv = to_stm32_pwm_dev(chip);
+	struct loongson_pwm *priv = to_loongson_pwm_dev(chip);
 	int ret;
 
 	/* protect common prescaler for all active channels */
 	mutex_lock(&priv->lock);
-	ret = stm32_pwm_apply(chip, pwm, state);
+	ret = loongson_pwm_apply(chip, pwm, state);
 	mutex_unlock(&priv->lock);
 
 	return ret;
 }
 
-static const struct pwm_ops stm32pwm_ops = {
+static const struct pwm_ops ls_timer_pwm_ops = {
 	.owner = THIS_MODULE,
-	.apply = stm32_pwm_apply_locked,
-	.capture = IS_ENABLED(CONFIG_DMA_ENGINE) ? stm32_pwm_capture : NULL,
+	.apply = loongson_pwm_apply_locked,
+	.capture = IS_ENABLED(CONFIG_DMA_ENGINE) ? loongson_pwm_capture : NULL,
 };
 
-static int stm32_pwm_set_breakinput(struct stm32_pwm *priv,
-				    int index, int level, int filter)
+static int loongson_pwm_set_breakinput(struct loongson_pwm *priv,
+				       const struct loongson_breakinput *bi)
 {
-	u32 bke = (index == 0) ? TIM_BDTR_BKE : TIM_BDTR_BK2E;
-	int shift = (index == 0) ? TIM_BDTR_BKF_SHIFT : TIM_BDTR_BK2F_SHIFT;
-	u32 mask = (index == 0) ? TIM_BDTR_BKE | TIM_BDTR_BKP | TIM_BDTR_BKF
-				: TIM_BDTR_BK2E | TIM_BDTR_BK2P | TIM_BDTR_BK2F;
-	u32 bdtr = bke;
+	u32 shift = TIM_BDTR_BKF_SHIFT(bi->index);
+	u32 bke = TIM_BDTR_BKE(bi->index);
+	u32 bkp = TIM_BDTR_BKP(bi->index);
+	u32 bkf = TIM_BDTR_BKF(bi->index);
+	u32 mask = bkf | bkp | bke;
+	u32 bdtr;
 
-	/*
-	 * The both bits could be set since only one will be wrote
-	 * due to mask value.
-	 */
-	if (level)
-		bdtr |= TIM_BDTR_BKP | TIM_BDTR_BK2P;
+	bdtr = (bi->filter & TIM_BDTR_BKF_MASK) << shift | bke;
 
-	bdtr |= (filter & TIM_BDTR_BKF_MASK) << shift;
+	if (bi->level)
+		bdtr |= bkp;
 
 	regmap_update_bits(priv->regmap, TIM_BDTR, mask, bdtr);
 
@@ -512,17 +495,17 @@ static int stm32_pwm_set_breakinput(struct stm32_pwm *priv,
 	return (bdtr & bke) ? 0 : -EINVAL;
 }
 
-static int stm32_pwm_apply_breakinputs(struct stm32_pwm *priv,
-				       struct device_node *np)
+static int loongson_pwm_apply_breakinputs(struct loongson_pwm *priv,
+					  struct device_node *np)
 {
-	struct stm32_breakinput breakinput[MAX_BREAKINPUT];
-	int nb, ret, i, array_size;
+	int nb, ret, array_size;
+	unsigned int i;
 
-	nb = of_property_count_elems_of_size(np, "st,breakinput",
-					     sizeof(struct stm32_breakinput));
+	nb = of_property_count_elems_of_size(
+		np, "loongson,breakinput", sizeof(struct loongson_breakinput));
 
 	/*
-	 * Because "st,breakinput" parameter is optional do not make probe
+	 * Because "loongson,breakinput" parameter is optional do not make probe
 	 * failed if it doesn't exist.
 	 */
 	if (nb <= 0)
@@ -531,23 +514,28 @@ static int stm32_pwm_apply_breakinputs(struct stm32_pwm *priv,
 	if (nb > MAX_BREAKINPUT)
 		return -EINVAL;
 
-	array_size = nb * sizeof(struct stm32_breakinput) / sizeof(u32);
-	ret = of_property_read_u32_array(np, "st,breakinput",
-					 (u32 *)breakinput, array_size);
+	priv->num_breakinputs = nb;
+	array_size = nb * sizeof(struct loongson_breakinput) / sizeof(u32);
+	ret = of_property_read_u32_array(np, "loongson,breakinput",
+					 (u32 *)priv->breakinputs, array_size);
 	if (ret)
 		return ret;
 
+	for (i = 0; i < priv->num_breakinputs; i++) {
+		if (priv->breakinputs[i].index > 1 ||
+		    priv->breakinputs[i].level > 1 ||
+		    priv->breakinputs[i].filter > 15)
+			return -EINVAL;
+	}
+
 	for (i = 0; i < nb && !ret; i++) {
-		ret = stm32_pwm_set_breakinput(priv,
-					       breakinput[i].index,
-					       breakinput[i].level,
-					       breakinput[i].filter);
+		ret = loongson_pwm_set_breakinput(priv, &priv->breakinputs[i]);
 	}
 
 	return ret;
 }
 
-static void stm32_pwm_detect_complementary(struct stm32_pwm *priv)
+static void loongson_pwm_detect_complementary(struct loongson_pwm *priv)
 {
 	u32 ccer;
 
@@ -555,27 +543,26 @@ static void stm32_pwm_detect_complementary(struct stm32_pwm *priv)
 	 * If complementary bit doesn't exist writing 1 will have no
 	 * effect so we can detect it.
 	 */
-	regmap_update_bits(priv->regmap,
-			   TIM_CCER, TIM_CCER_CC1NE, TIM_CCER_CC1NE);
+	regmap_update_bits(priv->regmap, TIM_CCER, TIM_CCER_CC1NE, TIM_CCER_CC1NE);
 	regmap_read(priv->regmap, TIM_CCER, &ccer);
 	regmap_update_bits(priv->regmap, TIM_CCER, TIM_CCER_CC1NE, 0);
 
 	priv->have_complementary_output = (ccer != 0);
 }
 
-static int stm32_pwm_detect_channels(struct stm32_pwm *priv)
+static int loongson_pwm_detect_channels(struct loongson_pwm *priv)
 {
-	u32 ccer;
+	u32 ccer, ccer_backup;
 	int npwm = 0;
 
 	/*
 	 * If channels enable bits don't exist writing 1 will have no
 	 * effect so we can detect and count them.
 	 */
-	regmap_update_bits(priv->regmap,
-			   TIM_CCER, TIM_CCER_CCXE, TIM_CCER_CCXE);
+	regmap_read(priv->regmap, TIM_CCER, &ccer_backup);
+	regmap_update_bits(priv->regmap, TIM_CCER, TIM_CCER_CCXE, TIM_CCER_CCXE);
 	regmap_read(priv->regmap, TIM_CCER, &ccer);
-	regmap_update_bits(priv->regmap, TIM_CCER, TIM_CCER_CCXE, 0);
+	regmap_update_bits(priv->regmap, TIM_CCER, TIM_CCER_CCXE, ccer_backup);
 
 	if (ccer & TIM_CCER_CC1E)
 		npwm++;
@@ -592,12 +579,12 @@ static int stm32_pwm_detect_channels(struct stm32_pwm *priv)
 	return npwm;
 }
 
-static int stm32_pwm_probe(struct platform_device *pdev)
+static int loongson_pwm_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *np = dev->of_node;
-	struct stm32_timers *ddata = dev_get_drvdata(pdev->dev.parent);
-	struct stm32_pwm *priv;
+	struct loongson_timers *ddata = dev_get_drvdata(pdev->dev.parent);
+	struct loongson_pwm *priv;
 	int ret;
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
@@ -606,35 +593,36 @@ static int stm32_pwm_probe(struct platform_device *pdev)
 
 	mutex_init(&priv->lock);
 	priv->regmap = ddata->regmap;
-	priv->clk = ddata->clk;
+	priv->clock_frequency = ddata->clock_frequency;
 	priv->max_arr = ddata->max_arr;
 
-	if (!priv->regmap || !priv->clk)
-		return -EINVAL;
+	if (!priv->regmap)
+		return dev_err_probe(dev, -EINVAL, "Failed to get %s\n", "regmap");
 
-	ret = stm32_pwm_apply_breakinputs(priv, np);
+	ret = loongson_pwm_apply_breakinputs(priv, np);
 	if (ret)
-		return ret;
+		return dev_err_probe(dev, ret,
+				     "Failed to configure breakinputs\n");
 
-	stm32_pwm_detect_complementary(priv);
+	loongson_pwm_detect_complementary(priv);
 
 	priv->chip.base = -1;
 	priv->chip.dev = dev;
-	priv->chip.ops = &stm32pwm_ops;
-	priv->chip.npwm = stm32_pwm_detect_channels(priv);
+	priv->chip.ops = &ls_timer_pwm_ops;
+	priv->chip.npwm = loongson_pwm_detect_channels(priv);
 
 	ret = pwmchip_add(&priv->chip);
 	if (ret < 0)
-		return ret;
+		return dev_err_probe(dev, ret, "Failed to register pwmchip\n");
 
 	platform_set_drvdata(pdev, priv);
 
 	return 0;
 }
 
-static int stm32_pwm_remove(struct platform_device *pdev)
+static int loongson_pwm_remove(struct platform_device *pdev)
 {
-	struct stm32_pwm *priv = platform_get_drvdata(pdev);
+	struct loongson_pwm *priv = platform_get_drvdata(pdev);
 	unsigned int i;
 
 	for (i = 0; i < priv->chip.npwm; i++)
@@ -645,22 +633,22 @@ static int stm32_pwm_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id stm32_pwm_of_match[] = {
-	{ .compatible = "st,stm32-pwm",	},
+static const struct of_device_id loongson_pwm_of_match[] = {
+	{ .compatible = "loongson,ls2k-pwm-timer", },
 	{ /* end node */ },
 };
-MODULE_DEVICE_TABLE(of, stm32_pwm_of_match);
+MODULE_DEVICE_TABLE(of, loongson_pwm_of_match);
 
-static struct platform_driver stm32_pwm_driver = {
-	.probe	= stm32_pwm_probe,
-	.remove	= stm32_pwm_remove,
+static struct platform_driver loongson_pwm_driver = {
+	.probe	= loongson_pwm_probe,
+	.remove	= loongson_pwm_remove,
 	.driver	= {
-		.name = "stm32-pwm",
-		.of_match_table = stm32_pwm_of_match,
+		.name = "loongson-pwm-timer",
+		.of_match_table = loongson_pwm_of_match,
 	},
 };
-module_platform_driver(stm32_pwm_driver);
+module_platform_driver(loongson_pwm_driver);
 
-MODULE_ALIAS("platform:stm32-pwm");
-MODULE_DESCRIPTION("STMicroelectronics STM32 PWM driver");
+MODULE_ALIAS("platform:loongson-pwm-timer");
+MODULE_DESCRIPTION("Loongson loongson2k PWM driver");
 MODULE_LICENSE("GPL v2");

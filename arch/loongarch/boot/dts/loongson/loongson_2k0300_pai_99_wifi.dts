@@ -214,16 +214,34 @@
     pinctrl-0 = <&spi2_pin>;
 };
 
-&pwm_atim{
-    status = "okay";
-    pinctrl-names = "default";
-    pinctrl-0 = <&atim3n_pin_m1>;
+&timers1 {
+	status = "okay";
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+	pinctrl-0 = <&atim3_pin_m1>, <&atim3n_pin_m1>;
+	pinctrl-names = "default";
+	clock-frequency = <100000000>;
+
+	pwm {
+		compatible = "loongson,ls2k-pwm-timer";
+		#pwm-cells = <2>;
+		status = "okay";
+	};
 };
 
-&pwm_gtim{
-    status = "okay";
-    pinctrl-names = "default";
-    pinctrl-0 = <&gtim2_pin_m1>, <&gtim3_pin_m1>;
+&timers2 {
+	status = "okay";
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+	pinctrl-0 = <&gtim2_pin_m1>, <&gtim3_pin_m1>;
+	pinctrl-names = "default";
+	clock-frequency = <100000000>;
+
+	pwm {
+		compatible = "loongson,ls2k-pwm-timer";
+		#pwm-cells = <2>;
+		status = "okay";
+	};
 };
 
 &pwm0{
