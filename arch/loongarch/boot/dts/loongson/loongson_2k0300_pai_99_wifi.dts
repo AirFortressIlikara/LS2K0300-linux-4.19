@@ -16,7 +16,7 @@
 };
 
 &cpu_uart1{
-    status = "disabled";
+    status = "okay";
     pinctrl-names = "default";
     pinctrl-0 = <&uart1_2bit_m0>;
 };
@@ -108,6 +108,13 @@
         32 20 00 05 14 14 1A 14 8B 2B 00
         ];
     };
+};
+
+&i2c1{
+    status = "okay";
+    clock-frequency = <400000>;
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2c1_mux_m0>;
     
     vl53l0x: vl53l0x@29 {
         compatible = "st,stmvl53l0";
@@ -117,11 +124,11 @@
     };
 };
 
-&i2c1{
-    status = "disabled";
+&i2c2{
+    status = "okay";
     clock-frequency = <400000>;
     pinctrl-names = "default";
-    pinctrl-0 = <&i2c1_mux_m0>;
+    pinctrl-0 = <&i2c2_mux_m0>;
 };
 
 &spi0{
@@ -162,7 +169,7 @@
 &spi1{
     status = "okay";
     pinctrl-names = "default";
-    pinctrl-0 = <&spi1_4bit>;
+    pinctrl-0 = <&spi1_4bit_miso_as_gpio_f0>, <&spi1_4bit_miso_as_gpio_f1>;
     
     ssd1306@0{
         status = "disabled";
@@ -183,11 +190,11 @@
         status = "okay";
         compatible = "sitronix,st7735r";
         buswidth = <8>;
-        rotate = <90>;
+        rotate = <270>;
         fps = <50>;
         rgb;
-        dc-gpios = <&gpa3 3 GPIO_ACTIVE_HIGH>;
-        reset-gpios = <&gpa3 2 GPIO_ACTIVE_HIGH>;
+        dc-gpios = <&gpa3 13 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpa4 10 GPIO_ACTIVE_HIGH>;
         spi-max-frequency = <100000000>;
         reg = <0>;
         debug = <0>;

@@ -69,6 +69,14 @@
             loongson,pinmux = <&gpa3 12 15>;
             loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
         };
+        spi1_4bit_miso_as_gpio_f0: spi1-4bit-miso-as-gpio_f0{
+            loongson,pinmux = <&gpa3 12 12>;
+            loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+        };
+        spi1_4bit_miso_as_gpio_f1: spi1-4bit-miso-as-gpio_f1{
+            loongson,pinmux = <&gpa3 14 15>;
+            loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+        };
         spi1_7bit_f0: spi1-7bit-f0{                             /* SPI1 have four cs */
             loongson,pinmux = <&gpa4 14 15>;
             loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
