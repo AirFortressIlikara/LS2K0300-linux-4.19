@@ -159,8 +159,8 @@ static const char *deemph_txt[] = { "None", "32Khz", "44.1Khz", "48Khz" };
 static const char *adcpol_txt[] = { "Normal", "L Invert", "R Invert", "L + R Invert" };
 static const char *es8323_mono_mux[] = { "Stereo", "Mono (Left)", "Mono (Right)" };
 static const char *es8323_diff_sel[] = { "Line 1", "Line 2" };
-static SOC_ENUM_SINGLE_DECL(es8323_left_dac_enum, ES8323_ADCCONTROL2, 6, es8323_pga_sell);
-static SOC_ENUM_SINGLE_DECL(es8323_right_dac_enum, ES8323_ADCCONTROL2, 4, es8323_pga_selr);
+static SOC_ENUM_SINGLE_DECL(es8323_left_adc_enum, ES8323_ADCCONTROL2, 6, es8323_pga_sell);
+static SOC_ENUM_SINGLE_DECL(es8323_right_adc_enum, ES8323_ADCCONTROL2, 4, es8323_pga_selr);
 static SOC_ENUM_SINGLE_DECL(es8323_diff_enum, ES8323_ADCCONTROL3, 7, es8323_diff_sel);
 static SOC_ENUM_SINGLE_DECL(es8323_llin_enum, ES8323_DACCONTROL16, 3, es8323_lin_sell);
 static SOC_ENUM_SINGLE_DECL(es8323_rlin_enum, ES8323_DACCONTROL16, 0, es8323_lin_selr);
@@ -188,8 +188,8 @@ static const DECLARE_TLV_DB_SCALE(out_tlv, -4500, 150, 0);
 static const DECLARE_TLV_DB_SCALE(bypass_tlv, 0, 300, 0);
 static const DECLARE_TLV_DB_SCALE(bypass_tlv2, -15, 300, 0);
 
-static const struct snd_kcontrol_new es8323_left_dac_mux_controls = SOC_DAPM_ENUM("Route", es8323_left_dac_enum);
-static const struct snd_kcontrol_new es8323_right_dac_mux_controls = SOC_DAPM_ENUM("Route", es8323_right_dac_enum);
+static const struct snd_kcontrol_new es8323_left_adc_mux_controls = SOC_DAPM_ENUM("Route", es8323_left_adc_enum);
+static const struct snd_kcontrol_new es8323_right_adc_mux_controls = SOC_DAPM_ENUM("Route", es8323_right_adc_enum);
 static const struct snd_kcontrol_new es8323_diffmux_controls = SOC_DAPM_ENUM("Route2", es8323_diff_enum);
 
 static const struct snd_kcontrol_new es8323_snd_controls[] = {
@@ -266,9 +266,9 @@ static const struct snd_soc_dapm_widget es8323_dapm_widgets[] = {
 	SND_SOC_DAPM_INPUT("RINPUT1"),
 	SND_SOC_DAPM_INPUT("RINPUT2"),
 	SND_SOC_DAPM_MUX("Left PGA Mux", SND_SOC_NOPM, 0, 0,
-			&es8323_left_dac_mux_controls),
+			&es8323_left_adc_mux_controls),
 	SND_SOC_DAPM_MUX("Right PGA Mux", SND_SOC_NOPM, 0, 0,
-			&es8323_right_dac_mux_controls),
+			&es8323_right_adc_mux_controls),
 	SND_SOC_DAPM_MICBIAS("Mic Bias", SND_SOC_NOPM, 3, 1),
 
 	SND_SOC_DAPM_MUX("Differential Mux", SND_SOC_NOPM, 0, 0,
@@ -809,36 +809,30 @@ static int es8323_resume(struct snd_soc_component *codec)
 	return 0;
 }
 
-static struct snd_soc_component *es8323_codec;
-static int es8323_probe(struct snd_soc_component *codec)
+/**
+ * es8323_init - Initialize the es8323 and configure the default parameters
+ *
+ * @codec: pointer to es8323 component
+ *
+ * This function initializes the es8323 and configures the chip with 
+ * default parameters.
+ */
+static int es8323_init(struct snd_soc_component *codec)
 {
-	struct es8323_priv *es8323 = snd_soc_component_get_drvdata(codec);
-	int ret = 0;
 	int data;
+	int ret;
 
-	if (codec == NULL) {
-		dev_err(codec->dev, "Codec device not registered\n");
-		return -ENODEV;
+	if (!codec) {
+		dev_err(codec->dev, "Invalid input codec is NULL\n");
+		return -EINVAL;
 	}
 
-	es8323->mclk = devm_clk_get(codec->dev, "mclk");
-	if (IS_ERR(es8323->mclk)) {
-		dev_err(codec->dev, "%s mclk is missing or invalid\n", __func__);
-		return PTR_ERR(es8323->mclk);
-	}
-	ret = clk_prepare_enable(es8323->mclk);
-	if (ret)
-		return ret;
-
-	es8323->sysclk_constraints = &constraints_112896;
-	es8323->sysclk = 11289600;
-
-	es8323_codec = codec;
 	ret = es8323_reset(codec);
 	if (ret < 0) {
 		dev_err(codec->dev, "Failed to issue reset\n");
 		return ret;
 	}
+
 	snd_soc_component_write(codec, 0x01, 0x60);
 	snd_soc_component_write(codec, 0x02, 0xF3);
 	snd_soc_component_write(codec, 0x02, 0xF0);
@@ -874,10 +868,120 @@ static int es8323_probe(struct snd_soc_component *codec)
 	usleep_range(18000, 20000);
 	snd_soc_component_write(codec, 0x04, 0x3c);
 
-	ret = snd_soc_component_read(codec, 0x09, &data);
-	ret = snd_soc_component_read(codec, 0x12, &data);
-	ret = snd_soc_component_read(codec, 0x13, &data);
+	snd_soc_component_read(codec, 0x09, &data);
+	snd_soc_component_read(codec, 0x12, &data);
+	snd_soc_component_read(codec, 0x13, &data);
 	es8323_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
+
+	return 0;
+}
+
+/**
+ * es8323_of_parse_audio_config - Parse the configuration parameters in the device tree
+ *
+ * @codec: pointer to es8323 component
+ *
+ * This function parses configuration parameters from the device tree and sets up the es8323.
+ *
+ * The property name of the configuration information is "audio-config", and it needs 
+ * to be added under the es8323 device tree node. The configuration information is in 
+ * groups of two strings, which are items and setting values respectively. For specific
+ * supported configuration items, please check the es8323_dapm_widgets array. Those 
+ * that support multiple choices can all be configured through the device tree.
+ * For example:
+ *     audio-config = "Differential Mux", "Line 2",
+ *                    "Left Line Mux", "Line 2L",
+ *                    "3D Mode", "Level 3";
+ */
+static int es8323_of_parse_audio_config(struct snd_soc_component *codec)
+{
+	struct snd_soc_dapm_widget *dapm_widgets = codec->driver->dapm_widgets;
+	int num_dapm_widgets = codec->driver->num_dapm_widgets;
+	struct device_node *np = codec->dev->of_node;
+	const char *propname = "audio-config";
+	struct soc_enum *psoc_enum = NULL;
+	const char *config_item = NULL;
+	const char *config_text = NULL;
+	unsigned int reg_value;
+	int num_config;
+	int i, j, k;
+	int ret;
+
+	num_config = of_property_count_strings(np, propname);
+	if (num_config < 0 || num_config & 1) {
+		dev_warn(codec->dev, "Property '%s' does not exist or its length is not even\n", propname);
+		return 0;
+	}
+	num_config /= 2;
+
+	for (i = 0; i < num_config; i++) {
+		ret = of_property_read_string_index(np, propname, 2 * i, &config_item);
+		if (ret) {
+			dev_warn(codec->dev,
+				"Property '%s' index %d could not be read: %d\n",
+				propname, 2 * i, ret);
+			continue;
+		}
+
+		ret = of_property_read_string_index(np, propname, (2 * i) + 1, &config_text);
+		if (ret) {
+			dev_warn(codec->dev,
+				"Property '%s' index %d could not be read: %d\n",
+				propname, (2 * i) + 1, ret);
+			continue;
+		}
+
+		for (j = 0; j < num_dapm_widgets; j++) {
+			ret = strcmp(dapm_widgets[j].name, config_item);
+			if (ret || !dapm_widgets[j].kcontrol_news || !dapm_widgets[j].num_kcontrols)
+				continue;
+
+			psoc_enum = (struct soc_enum *)dapm_widgets[j].kcontrol_news->private_value;
+			for (k = 0; k < psoc_enum->items; k++) {
+				ret = strcmp(psoc_enum->texts[k], config_text);
+				if (ret)
+					continue;
+
+				snd_soc_component_read(codec, psoc_enum->reg, &reg_value);
+				reg_value &= ~(psoc_enum->mask << psoc_enum->shift_r);
+				reg_value |= (((psoc_enum->values) ? psoc_enum->values[k] : k) & psoc_enum->mask) << psoc_enum->shift_r;
+				snd_soc_component_write(codec, psoc_enum->reg, reg_value);
+			}
+		}
+	}
+
+	return 0;
+}
+
+static struct snd_soc_component *es8323_codec;
+static int es8323_probe(struct snd_soc_component *codec)
+{
+	struct es8323_priv *es8323 = snd_soc_component_get_drvdata(codec);
+	int ret = 0;
+
+	if (!codec) {
+		dev_err(codec->dev, "Codec device not registered\n");
+		return -ENODEV;
+	}
+
+	es8323_codec = codec;
+	es8323->mclk = devm_clk_get(codec->dev, "mclk");
+	if (IS_ERR(es8323->mclk)) {
+		dev_err(codec->dev, "%s mclk is missing or invalid\n", __func__);
+		return PTR_ERR(es8323->mclk);
+	}
+	ret = clk_prepare_enable(es8323->mclk);
+	if (ret)
+		return ret;
+
+	es8323->sysclk_constraints = &constraints_112896;
+	es8323->sysclk = 11289600;
+
+	ret = es8323_init(codec);
+	if (ret < 0)
+		return ret;
+
+	es8323_of_parse_audio_config(codec);
 
 	return 0;
 }

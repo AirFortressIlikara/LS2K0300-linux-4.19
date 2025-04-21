@@ -20,6 +20,7 @@
  * if more than 127, that is dangerous.
  * here only provide sensor1 data, because it always hot than sensor0
  */
+#if (!CONFIG_LS2K300_PLATFORM)
 int loongson3_cpu_temp(int cpu)
 {
 	int cputemp;
@@ -32,6 +33,21 @@ int loongson3_cpu_temp(int cpu)
 	return cputemp;
 }
 EXPORT_SYMBOL(loongson3_cpu_temp);
+#else
+int ls2k300_cpu_temp(int cpu)
+{
+	int cputemp;
+	u32 reg;
+
+	/* temp = value * 0.57 - 394.7 */
+	reg = readl(TO_UNCAC(0x16001514));
+	reg = (reg & 0x7ff) * 100;
+	reg = reg * 57 / 100 - 39470;
+	cputemp = (int)reg / 100;
+
+	return cputemp;
+}
+#endif
 
 static int nr_packages;
 static struct device *cpu_hwmon_dev;
@@ -189,7 +205,11 @@ static ssize_t get_cpu_temp(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
 	int id = (to_sensor_dev_attr(attr))->index - 1;
+#if (!CONFIG_LS2K300_PLATFORM)
 	int value = loongson3_cpu_temp(id);
+#else
+	int value = ls2k300_cpu_temp(id);
+#endif
 	return sprintf(buf, "%d\n", value);
 }
 
@@ -212,7 +232,11 @@ static void remove_sysfs_cputemp_files(struct kobject *kobj)
 }
 
 static int cpu_initial_threshold = 64000;
+#ifndef CONFIG_FIX_HIGH_TEMP
 static int cpu_thermal_threshold = 96000;
+#else
+static int cpu_thermal_threshold = 128000;
+#endif
 module_param(cpu_thermal_threshold, int, 0644);
 MODULE_PARM_DESC(cpu_thermal_threshold, "cpu thermal threshold (96000 (default))");
 
@@ -223,7 +247,11 @@ static void do_thermal_timer(struct work_struct *work)
 	int i, value, temp_max = 0;
 
 	for (i=0; i<nr_packages; i++) {
+#if (!CONFIG_LS2K300_PLATFORM)
 		value = loongson3_cpu_temp(i);
+#else
+		value = ls2k300_cpu_temp(i);
+#endif
 		if (value > temp_max)
 			temp_max = value;
 	}
@@ -269,8 +297,13 @@ static int __init loongson_hwmon_init(void)
 	}
 #endif
 
+#if (!CONFIG_LS2K300_PLATFORM)
 	if ((iocsr_read32(LOONGARCH_IOCSR_FEATURES) & IOCSRF_TEMP) == 0)
 		return -1;
+#else
+	/* Configure the CPU temperature register */
+	writel(0xff03, TO_UNCAC(0x16001518));
+#endif
 
 	pr_info("Loongson Hwmon Enter...\n");
 
@@ -298,14 +331,20 @@ static int __init loongson_hwmon_init(void)
 	}
 
 	for (i=0; i<nr_packages; i++) {
+#if (!CONFIG_LS2K300_PLATFORM)
 		value = loongson3_cpu_temp(i);
+#else
+		value = ls2k300_cpu_temp(i);
+#endif
 		if (value > temp_max)
 			temp_max = value;
 	}
 
 	pr_info("Initial CPU temperature is %d (highest).\n", temp_max);
+#ifndef CONFIG_FIX_HIGH_TEMP
 	if (temp_max > cpu_initial_threshold)
 		cpu_thermal_threshold += temp_max - cpu_initial_threshold;
+#endif
 
 	INIT_DEFERRABLE_WORK(&thermal_work, do_thermal_timer);
 	schedule_delayed_work(&thermal_work, msecs_to_jiffies(20000));

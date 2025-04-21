@@ -66,9 +66,12 @@ struct mmc_gpio {
 	char cd_label[];
 };
 
-static const int dbgmap_err   = dbg_fail;
+static const int dbgmap_err   = dbg_fail | dbg_err;
 static const int dbgmap_info  = dbg_info | dbg_conf;
 static const int dbgmap_debug = dbg_err | dbg_debug;
+
+/* Used to fix the problem that DMA copies are small in length. */
+static u64 dma_buf;
 
 static void __iomem *cd_gpio_inten_base;
 #define dbg(host, channels, args...)		  \
@@ -335,19 +338,18 @@ static void ls2k_cmd_data_fix(struct ls2k_mci_host *host,
 	struct mmc_data *mdata = cmd->data;
 	int i, j;
 	u32 *data;
-	
-       if(host->pdata->version == LOONGSON_SDIO_EMMC_VER_1_2) {
+
+	if (host->pdata->version == LOONGSON_SDIO_EMMC_VER_1_2) {
 		if (cmd->opcode != SD_SWITCH)
 			return;
-        }
-	else {
+	} else {
 		if (host->app_cmd != SD_APP_SEND_SCR &&
 			host->app_cmd != SD_APP_SEND_NUM_WR_BLKS &&
 			host->app_cmd != SD_APP_SD_STATUS &&
-			cmd->opcode != MMC_SEND_WRITE_PROT && 
+			cmd->opcode != MMC_SEND_WRITE_PROT &&
 			cmd->opcode != SD_SWITCH)
 			return;
-        }
+	}
 	if (!(cmd->flags & MMC_CMD_ADTC))
 		return;
 
@@ -366,6 +368,11 @@ static irqreturn_t ls2k_mci_irq(int irq, void *dev_id)
 	struct ls2k_mci_host *host = dev_id;
 	struct mmc_command *cmd;
 	u32 mci_csta, mci_dsta, mci_imsk;
+
+	/* Used to fix the problem that DMA copies are small in length. */
+	u64 sg_dma_buf;
+	u32 dma_length = 0x0;
+	int i, j;
 
 	mci_csta = readl(host->base + SDICMDSTA);
 	mci_imsk = readl(host->base + SDIINTMSK);
@@ -394,7 +401,9 @@ static irqreturn_t ls2k_mci_irq(int irq, void *dev_id)
 	cmd->error = 0;
 
 	if (mci_imsk & SDIIMSK_CMDTIMEOUT) {
-		dbg(host, dbg_err, "CMDSTAT: error CMDTIMEOUT\n");
+#ifdef CONFIG_MMC_DEBUG
+		dbg(host, dbg_conf, "CMDSTAT: error CMDTIMEOUT\n");
+#endif
 		cmd->error = -ETIMEDOUT;
 		host->status = "error: command timeout";
 		goto fail_transfer;
@@ -467,6 +476,21 @@ fail_transfer:
 	host->pio_active = XFER_NONE;
 
 close_transfer:
+	/* Used to fix the problem that DMA copies are small in length. */
+	if (dma_buf && cmd->data && cmd->data->sg) {
+		dma_length = sg_dma_len(cmd->data->sg);
+
+		if (dma_length == 8 || dma_length == 12) {
+			/* Organize the messy data and return the correct data to the kernel stack. */
+			sg_dma_buf = TO_CAC(sg_dma_address(cmd->data->sg));
+			for (i = 0, j = dma_length / 4; i < j; i++)
+				((volatile __be32 *)sg_dma_buf)[i] = ((volatile __be32 *)dma_buf)[i * 4 + i];
+
+			kfree((void *)dma_buf);
+			dma_buf = 0;
+		}
+	}
+
 	host->complete_what = COMPLETION_FINALIZE;
 
 	if (host->pdata->irq_fixup)
@@ -565,8 +589,24 @@ static int ls2k_mci_prepare_dma(struct ls2k_mci_host *host, struct mmc_data *dat
 		host->sg_cpu[i].length = sg_dma_len(&data->sg[i])  / 4;
 		host->sg_cpu[i].step_length = 0;
 		host->sg_cpu[i].step_times = 1;
-		host->sg_cpu[i].saddr = sg_dma_address(&data->sg[i]);
-		host->sg_cpu[i].saddr_hi = ((sg_dma_address(&data->sg[i])) >> 32);
+
+		/* 
+		 * If the transmission length is 8 bytes or 12 bytes, the DMA 
+		 * transmission is out of order, so a new piece of memory is 
+		 * allocated to store the messy data.
+		 */
+		if (sg_dma_len(&data->sg[i]) == 8 || sg_dma_len(&data->sg[i]) == 12) {
+			dma_buf = (u64)kmalloc(48, GFP_KERNEL);
+			if (!dma_buf)
+				return -ENOMEM;
+
+			memset((void *)dma_buf, 0x00, 48);
+			host->sg_cpu[i].saddr    = dma_buf;
+			host->sg_cpu[i].saddr_hi = dma_buf >> 32;
+		} else {
+			host->sg_cpu[i].saddr    = sg_dma_address(&data->sg[i]);
+			host->sg_cpu[i].saddr_hi = ((sg_dma_address(&data->sg[i])) >> 32);
+		}
 		host->sg_cpu[i].daddr = host->phys_base+0x40;
 		if (data->flags & MMC_DATA_READ) {
 			host->sg_cpu[i].cmd = 0x1<<0;
@@ -674,20 +714,22 @@ static void ls2k_mci_send_request(struct mmc_host *mmc)
 #if 1   /* to solve 2k1500 emmc bug for losing interrupt when send cmd25 */
 	u32 s_flag, t_flag, tmp;
 	int retry_n = 1000;
-        if(cmd->opcode == 0x19){  //for cmd25  multiple blocks write
-            while(retry_n--){
-		tmp =  readl(host->base + 0x2c);  
-		s_flag = tmp & (0x1 << 14);
-		tmp =  readl(host->base + 0x38);
-	        t_flag = tmp & (0x1 << 11);
+        if (cmd->opcode == 0x19) {  //for cmd25  multiple blocks write
+		while (retry_n--) {
+		        tmp = readl(host->base + 0x2c);  
+			s_flag = tmp & (0x1 << 14);
+			tmp = readl(host->base + 0x38);
+			t_flag = tmp & (0x1 << 11);
 
-		if(s_flag && t_flag)  //tx fifo full
-		    break;
-		if(retry_n < 500)
-		    udelay(10);
-	    }	
-            if(retry_n < 0)
-	        printk("Warning: may losing int when tx fifo is not full\n");
+			if (s_flag && t_flag)  //tx fifo full
+				break;
+			if (retry_n < 500)
+				udelay(10);
+		}	
+#ifdef CONFIG_MMC_DEBUG
+		if (retry_n < 0)
+	        	dbg(host, dbg_conf, "mci warning: may losing int when tx fifo is not full\n");
+#endif
 	}
 #endif
 
@@ -717,7 +759,7 @@ static void ls2k_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 	u32 mci_con;
 	/* Set the power state */
 	mci_con = readl(host->base + SDICON);
-    u32 dll;
+	u32 dll;
 	int ret;
 
 
@@ -755,10 +797,10 @@ static void ls2k_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 #endif
 	host->bus_width = ios->bus_width;
 
-    ret = of_property_read_u32(pdev->dev.of_node, "dll", &dll);
+	ret = of_property_read_u32(pdev->dev.of_node, "dll", &dll);
         if (ret == 0) 
                 ls2k_mci_set_dll(host, dll);
-    mdelay(100);
+	mdelay(100);
 	ls2k_mci_enable_irq(host, true);
 }
 
@@ -787,7 +829,7 @@ static int ls2k_mci_get_ro(struct mmc_host *mmc)
 	return 0;
 }
 
-int ls2k_mci_gpio_get_cd(struct mmc_host *host)
+static int ls2k_mci_gpio_get_cd(struct mmc_host *host)
 {
 	int value, virq, chip_irq, wait_fall;  
 	struct mmc_gpio *ctx;
@@ -1053,11 +1095,11 @@ static int ls2k_mci_remove(struct platform_device *pdev)
 
 	ls2k_mci_shutdown(pdev);
 
+	tasklet_disable(&host->pio_tasklet);
 
 	free_irq(host->irq, host);
 
 	iounmap(host->base);
-	release_mem_region(host->mem->start, (host->mem->end - host->mem->start + 1));
 
 	mmc_free_host(mmc);
 	return 0;
@@ -1160,10 +1202,9 @@ err:
 }
 
 static const struct pci_device_id ls2k_mci_pci_ids[] = {
-	
-	  {
-	  	PCI_VENDOR_ID_LOONGSON, 0x7a48
-	  },
+	{
+	    PCI_VENDOR_ID_LOONGSON, 0x7a48
+	},
 	 
 	{
 	    PCI_VENDOR_ID_LOONGSON, 0x7a88

@@ -1,0 +1,87 @@
+#include "loongson64_2k0500.dtsi"
+
+
+&cpu_uart2{
+	status = "okay";
+};
+
+&cpu_uart1{
+    	status = "okay";
+};
+
+&cpu_uart3{
+    	status = "okay";
+};
+
+&cpu_uart7{
+    	status = "okay";
+};
+
+&dc{
+	dvo0: dvo@0 {
+                status = "okay";
+	};
+
+        vga: vga@1 {
+                ddc-i2c-bus = <&i2c0>;
+                status = "okay";
+            };
+};
+
+&i2c0{
+	status = "okay";
+	eeprom@50{
+		compatible = "eeprom-edid";
+		reg = <0x50>;
+	};
+
+	rtc@32{
+		compatible = "dallas,sd3078";
+		reg = <0x32>;
+	};
+};
+
+&i2c2{
+	status = "okay";
+};
+
+&i2c3{
+	status = "okay";
+};
+
+&pwm0{
+	status = "okay";
+};
+
+&pwm1{
+	status = "okay";
+};
+
+&pwm2{
+	status = "okay";
+};
+
+&pwm3{
+	status = "okay";
+};
+
+&pwm4{
+	status = "okay";
+};
+
+&pwm5{
+	status = "okay";
+};
+
+&pwm6{
+	status = "okay";
+};
+
+&pwm7{
+	status = "okay";
+};
+
+&pwm8{
+	status = "okay";
+};
+

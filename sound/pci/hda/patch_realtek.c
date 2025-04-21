@@ -6999,7 +6999,8 @@ static const struct hda_fixup alc269_fixups[] = {
 		.type = HDA_FIXUP_PINS,
 		.v.pins = (const struct hda_pintbl[]) {
 			{ 0x1b, 0x02214c40 }, /* Front Mic */
-			{ 0x15, 0x01014030 }, /* Rear Mic */
+			//{ 0x15, 0x01014030 }, /* Rear Mic */
+			{ 0x21, 0x01014030 }, /* Rear Mic */
 			{ }
 		},
 	},
