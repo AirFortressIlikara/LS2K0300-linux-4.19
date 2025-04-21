@@ -1,0 +1,111 @@
+#include "loongson64_2k0500.dtsi"
+
+
+&cpu_uart2{
+	status = "okay";
+};
+
+&cpu_uart0{
+    	status = "okay";
+};
+
+&cpu_uart1{
+    	status = "okay";
+};
+
+&cpu_uart3{
+    	status = "okay";
+};
+
+&cpu_uart4{
+    	status = "okay";
+};
+
+&cpu_uart5{
+    	status = "okay";
+};
+
+&cpu_uart6{
+    	status = "okay";
+};
+
+&cpu_uart7{
+    	status = "okay";
+};
+
+&cpu_uart8{
+    	status = "okay";
+};
+
+&cpu_uart9{
+    	status = "okay";
+};
+
+&dc{
+        vga: vga@1 {
+                ddc-i2c-bus = <&i2c5>;
+                status = "okay";
+            };
+};
+
+&i2c0{
+	status = "okay";
+	eeprom@50{
+		compatible = "atmel,24c64";
+		reg = <0x50>;
+		pagesize = <32>;
+	};
+
+	rtc@68{
+		compatible = "dallas,ds1339";
+		reg = <0x68>;
+	};
+};
+
+&i2c4{
+	status = "okay";
+};
+
+&i2c5{
+	status = "okay";
+};
+
+&spi4{
+	status = "okay";
+};
+
+&spi5{
+	status = "okay";
+};
+
+&pwm0{
+	status = "okay";
+};
+
+&pwm1{
+	status = "okay";
+};
+
+&pwm2{
+	status = "okay";
+};
+
+&pwm3{
+	status = "okay";
+};
+
+&pwm4{
+	status = "okay";
+};
+
+&pwm5{
+	status = "okay";
+};
+
+&pwm6{
+	status = "okay";
+};
+
+&flash{
+	status = "okay";
+};

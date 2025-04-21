@@ -267,7 +267,8 @@ static void loongson_alloc_msi_irq(struct pci_dev *pdev,
 			struct plat_stmmacenet_data *plat, struct stmmac_resources *res)
 {
 	u32 version;
-	int ch_cnt, vecs, i;
+	int  vecs, i;
+	int ch_cnt = plat->rx_queues_to_use;
 
 	version = readl(res->addr + GMAC_VERSION) & 0xff;
 
@@ -285,6 +286,10 @@ static void loongson_alloc_msi_irq(struct pci_dev *pdev,
 
 	plat->rx_queues_to_use = ch_cnt;
 	plat->tx_queues_to_use = ch_cnt;
+
+	/* Set tx_fifo_size/rx_fifo_size to a default of JUMBO_LEN */
+	plat->tx_fifo_size = JUMBO_LEN*ch_cnt;
+	plat->rx_fifo_size = JUMBO_LEN*ch_cnt;
 
 	pci_disable_msi(pdev);
 

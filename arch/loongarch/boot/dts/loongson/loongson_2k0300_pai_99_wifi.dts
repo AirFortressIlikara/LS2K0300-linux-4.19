@@ -74,10 +74,11 @@
     pinctrl-names = "default";
     pinctrl-0 = <&i2c0_mux_m0>;
 
-    codec@10{
-        compatible = "es8323";
-	reg = <0x10>;
-    };
+	codec@10{
+		compatible = "es8323";
+		reg = <0x10>;
+		audio-config = "Differential Mux", "Line 2";
+	};
 
     gt9xx-i2c@14{
     	status = "okay";

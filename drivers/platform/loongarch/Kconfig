@@ -41,4 +41,11 @@ config CPU_HWMON
 	help
 	  Loongson-3A/3B CPU Hwmon (temperature sensor) driver.
 
+config LS2K300_PLATFORM
+	tristate "The chip model is ls2k300"
+	depends on CPU_HWMON
+	default n
+	help
+	  When the chip model is ls2k300, it should be set as "y"; otherwise, it should be set as "n".
+
 endif # LOONGARCH_PLATFORM_DEVICES

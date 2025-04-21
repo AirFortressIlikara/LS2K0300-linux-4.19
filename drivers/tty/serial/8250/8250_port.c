@@ -1946,6 +1946,23 @@ static int serial8250_default_handle_irq(struct uart_port *port)
 	serial8250_rpm_get(up);
 
 	iir = serial_port_in(port, UART_IIR);
+
+	/*
+	 * There are ways to get Designware-based UARTs into a state where
+	 * they are asserting UART_IIR_RX_TIMEOUT but there is no actual
+	 * data available.  If we see such a case then we'll do a bogus
+	 * read.  If we don't do this then the "RX TIMEOUT" interrupt will
+	 * fire forever.
+	 *
+	 * This problem has only been observed so far when not in DMA mode
+	 * so we limit the workaround only to non-DMA mode.
+	 */
+	if (!up->dma && ((iir & 0x3f) == UART_IIR_RX_TIMEOUT)) {
+		unsigned int status = serial_port_in(port, UART_LSR);
+
+		if (!(status & (UART_LSR_DR | UART_LSR_BI)))
+			serial_port_in(port, UART_RX);
+	}
 	ret = serial8250_handle_irq(port, iir);
 
 	serial8250_rpm_put(up);
